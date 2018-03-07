@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<PluginManifest xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Name>Activity Collector</Name>
+  <Guid>ca9e8b56-4db0-440c-a900-33bde5887afc</Guid>
+  <Version>0.6.1</Version>
+</PluginManifest>
