@@ -33,6 +33,7 @@ namespace ActivityCollectorPlugin
         private CombatManager _combatManager;
         private PlayerManager _playerManager;
         private FactionManager _factionManager;
+        private GridManager _gridManager;
         private ITorchBase torch;
 
         public override void Init(ITorchBase torchBase)
@@ -46,6 +47,7 @@ namespace ActivityCollectorPlugin
             _currentServerState = _torchServer.State;
             _combatManager = new CombatManager();
             _factionManager = new FactionManager();
+            _gridManager = new GridManager();
 
             string configPath = Path.Combine(StoragePath, "ActivityCollector.cfg");
             log.Info($"Config location: {configPath}");
@@ -74,6 +76,7 @@ namespace ActivityCollectorPlugin
                 _combatManager.Run();
                 _playerManager.Run();
                 _factionManager.Run();
+                _gridManager.Run();
             }
         }
 
@@ -136,7 +139,8 @@ namespace ActivityCollectorPlugin
                         Analytics.Start("WriteToDatabase");
 
                         command.CommandText = "";
-                        while (SessionLogQueue.Count > 0)
+                        int currentMessageCount = 0;
+                        while (SessionLogQueue.Count > 0 && currentMessageCount < 1000)
                         {    
                             object element = null;
                             SessionLogQueue.TryDequeue(out element);
@@ -150,23 +154,35 @@ namespace ActivityCollectorPlugin
                             {
                                 if (((ServerState)element) != ServerState.Running)
                                 {
-                                    command.CommandText += string.Format(@"EXEC [dbo].cleanup_activity;");
+                                    // run cleanup
+                                    command.CommandText += string.Format(@"
+UPDATE [dbo].[activity]
+SET [state] = 'Unresolved'
+WHERE [state] = 'Active';
+
+UPDATE [dbo].[piloting]
+SET [end_time] = '{0}', [is_piloting] = 0
+WHERE [is_piloting] = 1;", DateTime.Now);
                                 }
 
-                                command.CommandText += string.Format(@"EXEC [dbo].add_session '{0}', '{1}';", ((ServerState)element).ToString(), DateTime.Now);
+                                command.CommandText += string.Format(@"
+INSERT INTO [dbo].[sessions] ([iteration_id], [status], [timestamp])
+	Values ((SELECT TOP 1 id FROM iterations order by startdate desc), '{0}', '{1}');", ((ServerState)element).ToString(), DateTime.Now);
                                 updateSessionNumber = true;
                             }
                             else if (element is ISQLQueryData)
                             {
                                 command.CommandText += (element as ISQLQueryData).GetQuery();
                             }
+
+                            currentMessageCount++;
                         }
 
                         command.ExecuteNonQuery();
 
                         if (updateSessionNumber)
                         {
-                            SqlCommand sessionator = new SqlCommand("SELECT TOP 1 [id], [iteration] FROM sessions ORDER BY [id] DESC", _sqldatabase);
+                            SqlCommand sessionator = new SqlCommand("SELECT TOP 1 [id], [iteration_id] FROM sessions ORDER BY [id] DESC;", _sqldatabase);
 
                             SqlDataReader reader = sessionator.ExecuteReader();
                             reader.Read();

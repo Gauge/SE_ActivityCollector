@@ -24,7 +24,7 @@ namespace ActivityCollectorPlugin.Descriptions
 SELECT * FROM factions WHERE [faction_id] = '{0}'
 IF @@ROWCOUNT = 0
     INSERT INTO factions ([faction_id], [iteration_id], [tag], [name], [description], [creation_date])
-    VALUES ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}')
+    VALUES ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}');
 ", FromFaction.FactionId, ActivityCollectorPlugin.CurrentIteration, FromFaction.Tag, FromFaction.Name, FromFaction.Description, DateTime.Now));
             }
 
@@ -34,13 +34,13 @@ IF @@ROWCOUNT = 0
 SELECT * FROM factions WHERE [faction_id] = '{0}'
 IF @@ROWCOUNT = 0
     INSERT INTO factions ([faction_id], [iteration_id], [tag], [name], [description], [creation_date])
-    VALUES ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}')
+    VALUES ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}');
 ", ToFaction.FactionId, ActivityCollectorPlugin.CurrentIteration, ToFaction.Tag, ToFaction.Name, ToFaction.Description, DateTime.Now));
             }
 
             query.Append(string.Format(@"
 INSERT INTO faction_activity ([action], [session_id], [from_faction], [to_faction], [player_id], [sender_id], [timestamp])
-VALUES ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}', '{6}')", 
+VALUES ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}', '{6}');", 
 Action.ToString(), ActivityCollectorPlugin.CurrentSession, FromFactionId, ToFactionId, PlayerId, SenderId, Timestamp));
 
             return query.ToString();

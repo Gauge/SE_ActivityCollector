@@ -20,25 +20,25 @@ namespace ActivityCollectorPlugin.Descriptions
             {
                 return string.Format(@"
                     SELECT * FROM [dbo].[users] 
-		                WHERE [steam_id] = '{0}'
+		                WHERE [steam_id] = '{0}';
 
                     IF @@ROWCOUNT = 0
                         INSERT INTO [dbo].[users] ([steam_id])
-                        VALUES ('{0}')
+                        VALUES ('{0}');
 
 	                SELECT * FROM [dbo].[usernames]
-		                WHERE [steam_id] = '{0}' AND [username] = '{1}'
+		                WHERE [steam_id] = '{0}' AND [username] = '{1}';
 
 	                IF @@ROWCOUNT = 0
 		                INSERT INTO [dbo].[usernames] ([steam_id], [username], [timestamp])
-		                VALUES ('{0}', '{1}', '{2}')
+		                VALUES ('{0}', '{1}', '{2}');
 
 	                UPDATE [dbo].[activity]
                     SET [state] = 'Unresolved'
                     WHERE [steam_id] = '{0}' AND [state] = 'Active';
 
                     INSERT INTO [dbo].[activity] ([steam_id], [player_id], [connected], [state], [session_id]) 
-	                VALUES('{0}', '{4}', '{2}', 'Active', '{3}')", 
+	                VALUES('{0}', '{4}', '{2}', 'Active', '{3}');", 
                     SteamId, Name, Connected, SessionId, PlayerId);
             }
             else
@@ -49,7 +49,7 @@ namespace ActivityCollectorPlugin.Descriptions
 
 	                IF @@ROWCOUNT = 0
 		                INSERT INTO activity ([steam_id], [player_id], [disconnected], [state], [session_id], [blocked_id])
-		                VALUES ('00000000000000000', '00000000000000000000', '{1}', 'Blocked', '{2}', '{0}')
+		                VALUES ('00000000000000000', '00000000000000000000', '{1}', 'Blocked', '{2}', '{0}');
 	                ELSE
 		                UPDATE [dbo].[activity]
 		                SET [disconnected] = '{1}', [state] = 'Disconnected'

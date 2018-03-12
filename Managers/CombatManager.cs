@@ -11,7 +11,7 @@ using ActivityCollectorPlugin.Descriptions;
 
 namespace ActivityCollectorPlugin.Managers
 {
-    public class CombatManager
+    public class CombatManager : IManager
     {
         public const string AlreadyLogged = "Logged";
         public bool IsInitialized { get; private set; } = false;

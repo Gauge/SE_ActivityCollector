@@ -5,7 +5,7 @@ using VRage.Game.ModAPI;
 
 namespace ActivityCollectorPlugin.Managers
 {
-    public class FactionManager
+    public class FactionManager : IManager
     {
         public bool IsInitialized { get; private set; } = false;
 

@@ -11,7 +11,7 @@ using VRage.Game.ModAPI.Interfaces;
 
 namespace ActivityCollectorPlugin.Managers
 {
-    public class PlayerManager
+    public class PlayerManager : IManager
     {
         private List<IMyPlayer> updatedPlayerList;
         private List<IMyPlayer> connectedPlayers;
@@ -19,6 +19,8 @@ namespace ActivityCollectorPlugin.Managers
         private Task listener;
         private int stateChanges = 0;
         private bool isUpdated = false;
+
+        public bool IsInitialized => true;
 
         public PlayerManager(IMultiplayerManagerBase multiplayerManager)
         {

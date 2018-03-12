@@ -5,7 +5,7 @@ Use [SE_ActivityCollector];
 CREATE TABLE [dbo].[users] (
 	[steam_id] [char](17) NOT NULL,
 	CONSTRAINT PK_users PRIMARY KEY ([steam_id])
-)
+);
 
 CREATE TABLE [dbo].[usernames](
 	[steam_id] [char](17) NOT NULL,
@@ -13,10 +13,10 @@ CREATE TABLE [dbo].[usernames](
 	[timestamp] [datetime] NOT NULL,
 	CONSTRAINT FK_usernames_users FOREIGN KEY([steam_id])
 	REFERENCES [dbo].[users] ([steam_id])
-)
+);
 
 CREATE TABLE [dbo].[iterations](
-	[id] [int] NOT NULL,
+	[id] int NOT NULL,
 	[name] [nvarchar](50) NULL,
 	[type] [varchar](25) NULL,
 	[startdate] [datetime] NOT NULL,
@@ -26,30 +26,30 @@ CREATE TABLE [dbo].[iterations](
 
 CREATE TABLE [dbo].[sessions](
 	[id] [int] IDENTITY(1,1) NOT NULL,
-	[iteration] [int] NULL,
+	[iteration_id] [int] NULL,
 	[status] [varchar](8) NOT NULL,
 	[timestamp] [datetime] NOT NULL,
 	CONSTRAINT PK_sessions PRIMARY KEY ([id]),
-	CONSTRAINT FK_iteration_sessions FOREIGN KEY([iteration]) 
+	CONSTRAINT FK_iteration_sessions FOREIGN KEY([iteration_id]) 
 	REFERENCES [dbo].[iterations] ([id])
 );
 
-CREATE TABLE [dbo].[kills](
-	[id] [int] IDENTITY(1,1) NOT NULL,
-	[session_id] [int] NOT NULL,
-	[killer_id] [char](17) NULL,
-	[weapon] [nvarchar](128) NULL,
-	[killer_was_piloting] [bit] NULL,
-	[killer_grid_id] [char] (20) NULL,
-	[killer_grid_name] [nvarchar](128) NULL,
-	[victim_id] [char](17) NULL,
-	[victim_was_piloting] [bit] NULL,
-	[victim_grid_id] [char] (20) NULL,
-	[victim_grid_name] [nvarchar](128) NULL,
-	[timestamp] [datetime] NULL,
-	CONSTRAINT FK_kills_sessions FOREIGN KEY([session_id]) 
-	REFERENCES [dbo].[sessions] ([id])
-);
+--CREATE TABLE [dbo].[kills](
+--	[id] [int] IDENTITY(1,1) NOT NULL,
+--	[session_id] [int] NOT NULL,
+--	[killer_id] [char](17) NULL,
+--	[weapon] [nvarchar](128) NULL,
+--	[killer_was_piloting] [bit] NULL,
+--	[killer_grid_id] [char] (20) NULL,
+--	[killer_grid_name] [nvarchar](128) NULL,
+--	[victim_id] [char](17) NULL,
+--	[victim_was_piloting] [bit] NULL,
+--	[victim_grid_id] [char] (20) NULL,
+--	[victim_grid_name] [nvarchar](128) NULL,
+--	[timestamp] [datetime] NULL,
+--	CONSTRAINT FK_kills_sessions FOREIGN KEY([session_id]) 
+--	REFERENCES [dbo].[sessions] ([id])
+--);
 
 CREATE TABLE [dbo].[chatlog](
 	[steam_id] [char](17) NOT NULL,
@@ -76,7 +76,48 @@ CREATE TABLE [dbo].[activity](
 	REFERENCES [dbo].[users] ([steam_id])
 );
 
-CREATE TABLE players
+CREATE TABLE grids
+(
+	[id] [char] (20) NOT NULL,
+	[parent_id] [char] (20) NULL,
+	[iteration_id] [int] NOT NULL,
+	[type] [char] (5) NOT NULL,
+	[created] [datetime] NOT NULL,
+	[removed] [datetime] NULL,
+	[split_with_parent] [datetime] NULL,
+	CONSTRAINT PK_grids PRIMARY KEY ([id], [iteration_id]),
+	CONSTRAINT FK_grids_iterations FOREIGN KEY ([iteration_id])
+	REFERENCES [dbo].[iterations] (id) 
+);
+
+CREATE TABLE grid_names
+(
+	[grid_id] [varchar] (20) NOT NULL,
+	[iteration_id] [int] NOT NULL,
+	[name] [nvarchar](128) NOT NULL,
+	[timestamp] [datetime] NOT NULL,
+	CONSTRAINT FK_grid_names_grids FOREIGN KEY ([grid_id], [iteration_id])
+	REFERENCES [dbo].grids ([id], [iteration_id])
+);
+
+CREATE TABLE blocks 
+(
+	[id] [char](20) NOT NULL,
+	[grid_id] [char](20) NOT NULL,
+	[iteration_id] [int] NOT NULL,
+	[built_by] [char] (20) NOT NULL,
+	[name] [varchar] (128) NOT NULL,
+	[type] [varchar] (4) NOT NULL,
+	[max_integrity] [decimal] NOT NULL,
+	[x] [int] NOT NULL,
+	[y] [int] NOT NULL,
+	[z] [int] NOT NULL,
+	CONSTRAINT PK_blocks PRIMARY KEY ([id], [grid_id], [iteration_id]),
+	CONSTRAINT FK_blocks_grids FOREIGN KEY ([grid_id], [iteration_id])
+	REFERENCES [dbo].[grids] ([id], [iteration_id])
+);
+
+CREATE TABLE spawns
 (
 	[steam_id] [char] (17) NOT NULL,
 	[player_id] [char] (20) NOT NULL,
@@ -95,9 +136,9 @@ CREATE TABLE piloting
 	[grid_id] [char] (20) NOT NULL,
 	[player_id] [char] (20) NOT NULL,
 	[session_id] [int] NOT NULL,
-	[started] [datetime] NOT NULL,
-	[ended] [datetime] NULL,
-	[is_piloting] bit NOT NULL,
+	[start_time] [datetime] NOT NULL,
+	[end_time] [datetime] NULL,
+	[is_piloting] [bit] NOT NULL,
 	CONSTRAINT FK_piloting_sessions FOREIGN KEY([session_id]) 
 	REFERENCES [dbo].[sessions] ([id]),
 );
