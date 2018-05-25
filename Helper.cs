@@ -1,5 +1,7 @@
 ﻿using Sandbox.ModAPI;
+using System;
 using System.Collections.Generic;
+using System.Globalization;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
 using VRageMath;
@@ -79,6 +81,24 @@ namespace ActivityCollectorPlugin
             }
 
             return grid;
+        }
+
+        public static DateTime DateTime => DateTime.UtcNow;
+        public static string DateTimeFormated => DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture);
+
+        public static string format(DateTime date)
+        {
+            return date.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture);
+        }
+
+        public static string getBlockId(int x, int y, int z)
+        {
+            return $"{x}|{y}|{z}";
+        }
+
+        public static string getBlockId(Vector3I pos)
+        {
+            return getBlockId(pos.X, pos.Y, pos.Z);
         }
     }
 }

@@ -70,7 +70,7 @@ namespace ActivityCollectorPlugin.Managers
                 {
                     CharacterId = entityId,
                     SessionId = ActivityCollectorPlugin.CurrentSession,
-                    EndTime = DateTime.Now
+                    EndTime = Helper.DateTime
                 });
             }
             else if (oldEntity == null)
@@ -83,7 +83,7 @@ namespace ActivityCollectorPlugin.Managers
                         CharacterId = newEntity.Entity.EntityId,
                         SessionId = ActivityCollectorPlugin.CurrentSession,
                         SteamId = Helper.GetPlayerSteamId(newEntity.Entity as IMyCharacter),
-                        StartTime = DateTime.Now
+                        StartTime = Helper.DateTime
                     });
                 }
                 else if (newEntity.Entity is IMyShipController)
@@ -95,7 +95,7 @@ namespace ActivityCollectorPlugin.Managers
                         CharacterId = character.EntityId,
                         SessionId = ActivityCollectorPlugin.CurrentSession,
                         SteamId = Helper.GetPlayerSteamId(character),
-                        StartTime = DateTime.Now
+                        StartTime = Helper.DateTime
                     });
                 }
             }
@@ -106,7 +106,7 @@ namespace ActivityCollectorPlugin.Managers
                     PlayerId = Helper.GetPlayerIdentityId(newEntity.Entity as IMyCharacter),
                     GridId = (oldEntity.Entity as IMyShipController).CubeGrid.EntityId,
                     SessionId = ActivityCollectorPlugin.CurrentSession,
-                    EndTime = DateTime.Now
+                    EndTime = Helper.DateTime
                 });
             }
             else if (oldEntity.Entity is IMyCharacter && newEntity.Entity is IMyShipController)
@@ -116,7 +116,7 @@ namespace ActivityCollectorPlugin.Managers
                     PlayerId = Helper.GetPlayerIdentityId(oldEntity.Entity as IMyCharacter),
                     GridId = (newEntity.Entity as IMyShipController).CubeGrid.EntityId,
                     SessionId = ActivityCollectorPlugin.CurrentSession,
-                    StartTime = DateTime.Now
+                    StartTime = Helper.DateTime
                 });
             }
         }
@@ -143,8 +143,8 @@ namespace ActivityCollectorPlugin.Managers
             {
                 if (!isUpdated) continue;
 
-                lock (tempPlayers)
-                {
+                //lock (tempPlayers)
+                //{
                     int tpCount = tempPlayers.Count;
                     for (int i = 0; i < tpCount; i++)
                     {
@@ -161,7 +161,7 @@ namespace ActivityCollectorPlugin.Managers
                                         PlayerId = tempPlayers[i].IdentityId,
                                         SessionId = ActivityCollectorPlugin.CurrentSession,
                                         Name = tempPlayers[i].DisplayName,
-                                        Connected = DateTime.Now,
+                                        Connected = Helper.DateTime,
                                         State = LoginState.Active
                                     });
                                     stateChanges--;
@@ -177,7 +177,7 @@ namespace ActivityCollectorPlugin.Managers
                                         SteamId = connectedPlayers[i].SteamUserId,
                                         PlayerId = connectedPlayers[i].IdentityId,
                                         SessionId = ActivityCollectorPlugin.CurrentSession,
-                                        Disconnected = DateTime.Now,
+                                        Disconnected = Helper.DateTime,
                                         State = LoginState.Disconnected
                                     });
                                     stateChanges--;
@@ -195,7 +195,7 @@ namespace ActivityCollectorPlugin.Managers
                                 PlayerId = tempPlayers[i].IdentityId,
                                 SessionId = ActivityCollectorPlugin.CurrentSession,
                                 Name = tempPlayers[i].DisplayName,
-                                Connected = DateTime.Now,
+                                Connected = Helper.DateTime,
                                 State = LoginState.Active
                             });
                             stateChanges--;
@@ -216,7 +216,7 @@ namespace ActivityCollectorPlugin.Managers
                                 SteamId = connectedPlayers[i].SteamUserId,
                                 PlayerId = connectedPlayers[i].IdentityId,
                                 SessionId = ActivityCollectorPlugin.CurrentSession,
-                                Disconnected = DateTime.Now,
+                                Disconnected = Helper.DateTime,
                                 State = LoginState.Disconnected
                             });
                             stateChanges--;
@@ -225,7 +225,7 @@ namespace ActivityCollectorPlugin.Managers
                     }
                     
                     tempPlayers.Clear();
-                }
+                //}
 
                 isUpdated = false;
                 Thread.Sleep(2000);

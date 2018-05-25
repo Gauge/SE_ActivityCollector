@@ -39,7 +39,7 @@ namespace ActivityCollectorPlugin.Descriptions
 
                     INSERT INTO [dbo].[activity] ([steam_id], [player_id], [connected], [state], [session_id]) 
 	                VALUES('{0}', '{4}', '{2}', 'Active', '{3}');", 
-                    SteamId, Name, Connected, SessionId, PlayerId);
+                    SteamId, Name, Helper.format(Connected), SessionId, PlayerId);
             }
             else
             {
@@ -58,7 +58,7 @@ namespace ActivityCollectorPlugin.Descriptions
 		                IF @@ROWCOUNT = 0
 			                INSERT INTO [dbo].[activity] ([steam_id], [player_id], [disconnected], [state], [session_id]) 
 			                VALUES ('{0}', '{3}', '{1}', 'Failed', '{2}');",
-                    SteamId, Disconnected, SessionId, PlayerId);
+                    SteamId, Helper.format(Disconnected), SessionId, PlayerId);
             }
         }
     }

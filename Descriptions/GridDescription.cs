@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ActivityCollectorPlugin.Descriptions
 {
@@ -20,37 +16,25 @@ namespace ActivityCollectorPlugin.Descriptions
         {
             if (SplitWithParent != DateTime.MinValue)
             {
-                return string.Format(@"
-UPDATE grids
-SET [parent_id] = '{0}', [split_with_parent] = '{1}'
-WHERE [id] = '{2}';", ParentId, SplitWithParent, GridId);
+                return $@"UPDATE grids
+SET [parent_id] = '{ParentId}', [split_with_parent] = '{Helper.format(SplitWithParent)}'
+WHERE [id] = '{GridId}' AND [removed] IS NULL;";
+
             }
             else if (Removed == DateTime.MinValue)
-            {
-                return string.Format(@"
-                SELECT * FROM grids 
-                    WHERE id = '{0}' AND
-                        iteration_id = '{1}';
-                
-                IF @@ROWCOUNT = 0
-                    INSERT INTO grids ([id], [iteration_id], [type], [created])
-                    VALUES ('{0}', '{1}', '{2}', '{3}');",
-                    GridId, ActivityCollectorPlugin.CurrentIteration, Type, Created);
-
+            { //  AND [session_id] IN (SELECT [session_id] FROM sessions WHERE [iteration_id] = '{ActivityCollectorPlugin.CurrentIteration}')
+                return $@"IF NOT EXISTS (SELECT * FROM grids WHERE [id] = '{GridId}' AND [removed] IS NULL)
+BEGIN
+INSERT INTO grids ([id], [session_id], [type], [created])
+VALUES ('{GridId}', '{ActivityCollectorPlugin.CurrentSession}', '{Type}', '{Helper.format(Created)}')
+END;";
             }
             else
             {
-                return string.Format(@"
-                SELECT * FROM grids 
-                    WHERE id = '{0}' AND
-                        iteration_id = '{1}';
-                
-                IF @@ROWCOUNT <> 0
-                    UPDATE grids
-                    SET [removed] = '{2}'
-                    WHERE [id] = '{0}' AND
-                        iteration_id = '{1}';",
-                    GridId, ActivityCollectorPlugin.CurrentIteration, Removed);
+                return $@"UPDATE grids
+SET [removed] = '{Helper.format(Removed)}'
+WHERE [id] = '{GridId}' AND [removed] IS NULL;"; // AND [session_id] IN (SELECT [session_id] FROM sessions WHERE [iteration_id] = '{ActivityCollectorPlugin.CurrentIteration}')
+
             }
         }
     }

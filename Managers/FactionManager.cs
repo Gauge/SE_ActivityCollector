@@ -35,7 +35,7 @@ namespace ActivityCollectorPlugin.Managers
                     Tag = faction.Tag,
                     Name = faction.Name,
                     Description = faction.Description,
-                    CreationDate = DateTime.Now,
+                    CreationDate = Helper.DateTime,
                     State = FactionState.Create
                 });
             }
@@ -61,7 +61,7 @@ namespace ActivityCollectorPlugin.Managers
 
         private void OnFactionStateChanged(MyFactionStateChange action, long fromFaction, long toFaction, long playerId, long senderId)
         {
-            ActivityCollectorPlugin.SessionLogQueue.Enqueue(new FactionActivityDescription()
+            ActivityCollectorPlugin.SessionLogQueue.Enqueue(new FactionLogDescription()
             {
                 Action = action,
                 FromFaction = MyAPIGateway.Session.Factions.TryGetFactionById(fromFaction),
@@ -70,7 +70,7 @@ namespace ActivityCollectorPlugin.Managers
                 ToFactionId = toFaction,
                 PlayerId = playerId,
                 SenderId = senderId,
-                Timestamp = DateTime.Now
+                Timestamp = Helper.DateTime
             });
 
             if (action == MyFactionStateChange.RemoveFaction)
@@ -83,7 +83,7 @@ namespace ActivityCollectorPlugin.Managers
                     ActivityCollectorPlugin.SessionLogQueue.Enqueue(new FactionDescription()
                     {
                         FactionId = fromFaction,
-                        TerminationDate = DateTime.Now,
+                        TerminationDate = Helper.DateTime,
                         State = FactionState.Remove
                     });
                 }

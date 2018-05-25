@@ -53,3 +53,7 @@ GameBinaries
 App.config
 .vs/
 packages/
+.sln
+.psess
+.vsp
+.vspx

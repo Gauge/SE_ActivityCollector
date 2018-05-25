@@ -27,7 +27,6 @@ namespace ActivityCollectorPlugin.Managers
                 MyAPIGateway.Session.DamageSystem.RegisterAfterDamageHandler(0, CombatDamageHandler);
                 MyAPIGateway.Session.DamageSystem.RegisterDestroyHandler(0, CauseKeenHacks);
                 MyAPIGateway.Entities.OnEntityAdd += OnEntityAdd;
-                FactionManager faction = new FactionManager();
                 IsInitialized = true;
             }
         }
@@ -36,7 +35,7 @@ namespace ActivityCollectorPlugin.Managers
         {
             // THIS IS A HACK because keen... 
             // sets cubeblock or grid id to missiles on load. to be used in the damage system
-            if (entity.GetType().ToString() == "Sandbox.Game.Weapons.MyMissile")
+            if (entity.GetType().Name == "MyMissile")
             {
                 Analytics.Start("addMissile");
                 Vector3D from = entity.WorldMatrix.Translation + entity.WorldMatrix.Backward;
@@ -60,35 +59,17 @@ namespace ActivityCollectorPlugin.Managers
             CombatDescription log = new CombatDescription
             {
                 Damage = info.Amount,
-                DamageType = info.Type.String,
+                Type = info.Type.String,
                 SessionId = ActivityCollectorPlugin.CurrentSession,
-                Timestamp = DateTime.Now
+                Timestamp = Helper.DateTime
             };
 
             if (target is IMySlimBlock)
             {
                 IMySlimBlock slim = target as IMySlimBlock;
-                log.TargetEntityDestroyed = slim.Integrity <= log.Damage;
-                log.TargetEntityFunctional = true; // assumes true until proven false
+                log.Integrity = slim.Integrity;
                 log.VictimGridId = slim.CubeGrid.EntityId;
-                log.VictimGridName = slim.CubeGrid.DisplayName;
-                log.VictimGridOwner = slim.CubeGrid.BigOwners.FirstOrDefault();
-                log.VictimEntityOwner = slim.OwnerId;
-
-                if (slim.FatBlock != null)
-                {
-                    log.TargetEntityFunctional = slim.FatBlock.IsFunctional;
-                    log.VictimEntityId = slim.FatBlock.EntityId;
-                    log.VictimEntityName = slim.FatBlock.DisplayName;
-                    log.VictimEntityType = slim.FatBlock.BlockDefinition.TypeIdString;
-                    log.VictimEntitySubtype = slim.FatBlock.BlockDefinition.SubtypeId;
-                    log.VictimEntityObjectType = slim.FatBlock.GetType().Name;
-                }
-                else
-                {
-                    log.VictimEntityName = slim.BlockDefinition.DisplayNameText;
-                    log.VictimEntityObjectType = slim.GetType().Name;
-                }
+                log.VictimGridBlockId = Helper.getBlockId(slim.Position);
             }
             else if (target is IMyCharacter)
             {
@@ -96,18 +77,19 @@ namespace ActivityCollectorPlugin.Managers
 
                 // characters keep getting hit after death we dont want to log that
                 if (character.Name == AlreadyLogged) return;
-                log.TargetEntityDestroyed = log.TargetEntityFunctional = character.Integrity <= log.Damage;
-                if (log.TargetEntityDestroyed)
+
+                if (character.Integrity <= 0)
                 {
                     character.Name = AlreadyLogged;
                 }
-
                 log.VictimEntityId = character.EntityId;
-                log.VictimEntityName = character.DisplayName;
-                log.VictimEntityType = character.Definition.DisplayNameText;
-                log.VictimEntitySubtype = character.Definition.DescriptionText;
-                log.VictimEntityObjectType = character.GetType().Name;
-                log.VictimEntityOwner = Helper.GetPlayerIdentityId(character);
+                log.Integrity = character.Integrity;
+            }
+            else if (target is IMyFloatingObject)
+            {
+                IMyFloatingObject obj = (target as IMyFloatingObject);
+                log.VictimEntityId = obj.EntityId;
+                log.Integrity = obj.Integrity;
             }
             else
             {
@@ -126,15 +108,7 @@ namespace ActivityCollectorPlugin.Managers
                 IMyCubeBlock cube = entity as IMyCubeBlock;
 
                 log.AttackerGridId = cube.CubeGrid.EntityId;
-                log.AttackerGridName = cube.CubeGrid.DisplayName;
-                log.AttackerGridOwner = cube.CubeGrid.BigOwners.FirstOrDefault();
-
                 log.AttackerEntityId = cube.EntityId;
-                log.AttackerEntityName = cube.DisplayName;
-                log.AttackerEntityType = cube.BlockDefinition.TypeIdString;
-                log.AttackerEntitySubtype = cube.BlockDefinition.SubtypeName;
-                log.AttackerEntityObjectType = cube.GetType().Name;
-                log.AttackerEntityOwner = cube.OwnerId;
             }
             else if (entity is IMyCharacter)
             {
@@ -157,23 +131,13 @@ namespace ActivityCollectorPlugin.Managers
                                     IMyCubeGrid grid = missileEntity as IMyCubeGrid;
 
                                     log.AttackerGridId = grid.EntityId;
-                                    log.AttackerGridName = grid.DisplayName;
-                                    log.AttackerGridOwner = grid.BigOwners.FirstOrDefault();
                                 }
                                 else
                                 {
                                     IMyCubeBlock cube = missileEntity as IMyCubeBlock;
 
                                     log.AttackerGridId = cube.CubeGrid.EntityId;
-                                    log.AttackerGridName = cube.CubeGrid.DisplayName;
-                                    log.AttackerGridOwner = cube.CubeGrid.BigOwners.FirstOrDefault();
-
-                                    log.AttackerEntityId = cube.EntityId;
-                                    log.AttackerEntityName = cube.DisplayName;
-                                    log.AttackerEntityType = cube.BlockDefinition.TypeIdString;
-                                    log.AttackerEntitySubtype = cube.BlockDefinition.SubtypeName;
-                                    log.AttackerEntityObjectType = cube.GetType().Name;
-                                    log.AttackerEntityOwner = cube.OwnerId;
+                                    log.AttackerGridBlockId = Helper.getBlockId(cube.Position);
                                 }
                             }
                             else
@@ -189,11 +153,6 @@ namespace ActivityCollectorPlugin.Managers
                     else
                     {
                         log.AttackerEntityId = character.EntityId;
-                        log.AttackerEntityName = character.DisplayName;
-                        log.AttackerEntityType = character.Definition.DisplayNameText;
-                        log.AttackerEntitySubtype = character.Definition.DescriptionText;
-                        log.AttackerEntityObjectType = character.GetType().Name;
-                        log.AttackerEntityOwner = Helper.GetPlayerIdentityId(character);
                     }
                 }
                 catch (Exception e)
@@ -206,44 +165,25 @@ namespace ActivityCollectorPlugin.Managers
                 IMyGunBaseUser gun = entity as IMyGunBaseUser;
 
                 log.AttackerEntityId = gun.Weapon.EntityId;
-                log.AttackerEntityName = gun.Weapon.DisplayName;
-                log.AttackerEntityType = gun.Weapon.GetObjectBuilder().SubtypeId.String;
-                log.AttackerEntitySubtype = gun.Weapon.GetObjectBuilder().SubtypeName;
-                log.AttackerEntityObjectType = gun.Weapon.GetType().Name;
-                log.AttackerEntityOwner = MyAPIGateway.Players.GetPlayerControllingEntity(gun.Owner).IdentityId;
             }
             else if (entity is IMyEngineerToolBase)
             {
                 IMyEngineerToolBase toolbase = entity as IMyEngineerToolBase;
 
                 log.AttackerEntityId = toolbase.EntityId;
-                log.AttackerEntityName = toolbase.DisplayName;
-                log.AttackerEntityType = toolbase.GetObjectBuilder().Name;
-                log.AttackerEntitySubtype = toolbase.GetObjectBuilder().SubtypeName;
-                log.AttackerEntityObjectType = toolbase.GetType().Name;
-                log.AttackerEntityOwner = toolbase.OwnerIdentityId;
             }
             else if (entity is IMySlimBlock)
             {
                 IMySlimBlock slim = entity as IMySlimBlock;
 
                 log.AttackerGridId = slim.CubeGrid.EntityId;
-                log.AttackerGridName = slim.CubeGrid.DisplayName;
-                log.AttackerGridOwner = slim.CubeGrid.BigOwners.FirstOrDefault();
-                log.AttackerEntityOwner = slim.OwnerId;
 
                 if (slim.FatBlock != null)
                 {
                     log.AttackerEntityId = slim.FatBlock.EntityId;
-                    log.AttackerEntityName = slim.FatBlock.DisplayName;
-                    log.AttackerEntityType = slim.FatBlock.BlockDefinition.TypeIdString;
-                    log.AttackerEntitySubtype = slim.FatBlock.BlockDefinition.SubtypeName;
-                    log.AttackerEntityObjectType = slim.FatBlock.GetType().Name;
                 }
                 else
                 {
-                    log.AttackerEntityName = slim.BlockDefinition.DisplayNameText;
-                    log.AttackerEntityObjectType = slim.GetType().Name;
                 }
             }
             else if (entity is IMyCubeGrid)
@@ -251,17 +191,11 @@ namespace ActivityCollectorPlugin.Managers
                 IMyCubeGrid grid = entity as IMyCubeGrid;
 
                 log.AttackerGridId = grid.EntityId;
-                log.AttackerGridName = grid.DisplayName;
-                log.AttackerGridOwner = grid.BigOwners.FirstOrDefault();
             }
             else if (entity is MyVoxelBase)
             {
                 MyVoxelBase voxel = entity as MyVoxelBase;
-
                 log.AttackerEntityId = entity.EntityId;
-                log.AttackerEntityName = voxel.RootVoxel.StorageName;
-                log.AttackerEntityType = (voxel.RootVoxel.Name == null) ? "Asteroid" : "Planet";
-                log.AttackerEntityObjectType = entity.GetType().Name;
             }
             else if (entity.GetType().Name == "MyMissile")
             {
@@ -276,25 +210,13 @@ namespace ActivityCollectorPlugin.Managers
                         if (missileEntity is IMyCubeGrid)
                         {
                             IMyCubeGrid grid = missileEntity as IMyCubeGrid;
-
                             log.AttackerGridId = grid.EntityId;
-                            log.AttackerGridName = grid.DisplayName;
-                            log.AttackerGridOwner = grid.BigOwners.FirstOrDefault();
                         }
                         else
                         {
                             IMyCubeBlock cube = missileEntity as IMyCubeBlock;
-
                             log.AttackerGridId = cube.CubeGrid.EntityId;
-                            log.AttackerGridName = cube.CubeGrid.DisplayName;
-                            log.AttackerGridOwner = cube.CubeGrid.BigOwners.FirstOrDefault();
-
                             log.AttackerEntityId = cube.EntityId;
-                            log.AttackerEntityName = cube.DisplayName;
-                            log.AttackerEntityType = cube.BlockDefinition.TypeIdString;
-                            log.AttackerEntitySubtype = cube.BlockDefinition.SubtypeName;
-                            log.AttackerEntityObjectType = cube.GetType().Name;
-                            log.AttackerEntityOwner = cube.OwnerId;
                         }
                     }
                     else

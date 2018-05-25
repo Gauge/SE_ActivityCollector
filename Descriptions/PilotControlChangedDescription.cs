@@ -17,7 +17,7 @@ namespace ActivityCollectorPlugin.Descriptions
                 return string.Format(@"
                     INSERT INTO piloting ([grid_id], [player_id], [session_id], [start_time], [is_piloting])
                     VALUES ('{0}','{1}','{2}','{3}', 1);", 
-                    GridId, PlayerId, SessionId, StartTime);
+                    GridId, PlayerId, SessionId, Helper.format(StartTime));
             }
             else
             {
@@ -25,7 +25,7 @@ namespace ActivityCollectorPlugin.Descriptions
                     UPDATE piloting
                     SET [end_time] = '{0}', [is_piloting] = 0
                     WHERE [grid_id] = '{1}' AND [player_id] = '{2}' AND [session_id] = '{3}' AND [is_piloting] = 1;",
-                    EndTime, GridId, PlayerId, SessionId);
+                    Helper.format(EndTime), GridId, PlayerId, SessionId);
             }
         }
     }

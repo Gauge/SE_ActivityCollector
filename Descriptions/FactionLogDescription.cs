@@ -4,7 +4,7 @@ using VRage.Game.ModAPI;
 
 namespace ActivityCollectorPlugin.Descriptions
 {
-    public class FactionActivityDescription : ISQLQueryData
+    public class FactionLogDescription : ISQLQueryData
     {
         public MyFactionStateChange Action { get; set; }
         public IMyFaction FromFaction { get; set; }
@@ -25,7 +25,7 @@ SELECT * FROM factions WHERE [faction_id] = '{0}'
 IF @@ROWCOUNT = 0
     INSERT INTO factions ([faction_id], [iteration_id], [tag], [name], [description], [creation_date])
     VALUES ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}');
-", FromFaction.FactionId, ActivityCollectorPlugin.CurrentIteration, FromFaction.Tag, FromFaction.Name, FromFaction.Description, DateTime.Now));
+", FromFaction.FactionId, ActivityCollectorPlugin.CurrentIteration, FromFaction.Tag, FromFaction.Name, FromFaction.Description, Helper.format(Timestamp)));
             }
 
             if (ToFaction != null)
@@ -35,13 +35,13 @@ SELECT * FROM factions WHERE [faction_id] = '{0}'
 IF @@ROWCOUNT = 0
     INSERT INTO factions ([faction_id], [iteration_id], [tag], [name], [description], [creation_date])
     VALUES ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}');
-", ToFaction.FactionId, ActivityCollectorPlugin.CurrentIteration, ToFaction.Tag, ToFaction.Name, ToFaction.Description, DateTime.Now));
+", ToFaction.FactionId, ActivityCollectorPlugin.CurrentIteration, ToFaction.Tag, ToFaction.Name, ToFaction.Description, Helper.format(Timestamp)));
             }
 
             query.Append(string.Format(@"
-INSERT INTO faction_activity ([action], [session_id], [from_faction], [to_faction], [player_id], [sender_id], [timestamp])
+INSERT INTO factionlog ([action], [session_id], [from_faction], [to_faction], [player_id], [sender_id], [timestamp])
 VALUES ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}', '{6}');", 
-Action.ToString(), ActivityCollectorPlugin.CurrentSession, FromFactionId, ToFactionId, PlayerId, SenderId, Timestamp));
+Action.ToString(), ActivityCollectorPlugin.CurrentSession, FromFactionId, ToFactionId, PlayerId, SenderId, Helper.format(Timestamp)));
 
             return query.ToString();
         }

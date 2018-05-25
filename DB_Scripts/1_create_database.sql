@@ -34,23 +34,6 @@ CREATE TABLE [dbo].[sessions](
 	REFERENCES [dbo].[iterations] ([id])
 );
 
---CREATE TABLE [dbo].[kills](
---	[id] [int] IDENTITY(1,1) NOT NULL,
---	[session_id] [int] NOT NULL,
---	[killer_id] [char](17) NULL,
---	[weapon] [nvarchar](128) NULL,
---	[killer_was_piloting] [bit] NULL,
---	[killer_grid_id] [char] (20) NULL,
---	[killer_grid_name] [nvarchar](128) NULL,
---	[victim_id] [char](17) NULL,
---	[victim_was_piloting] [bit] NULL,
---	[victim_grid_id] [char] (20) NULL,
---	[victim_grid_name] [nvarchar](128) NULL,
---	[timestamp] [datetime] NULL,
---	CONSTRAINT FK_kills_sessions FOREIGN KEY([session_id]) 
---	REFERENCES [dbo].[sessions] ([id])
---);
-
 CREATE TABLE [dbo].[chatlog](
 	[steam_id] [char](17) NOT NULL,
 	[session_id] [int] NOT NULL,
@@ -92,12 +75,34 @@ CREATE TABLE grids
 
 CREATE TABLE grid_names
 (
-	[grid_id] [varchar] (20) NOT NULL,
+	[grid_id] [char] (20) NOT NULL,
 	[iteration_id] [int] NOT NULL,
 	[name] [nvarchar](128) NOT NULL,
 	[timestamp] [datetime] NOT NULL,
 	CONSTRAINT FK_grid_names_grids FOREIGN KEY ([grid_id], [iteration_id])
 	REFERENCES [dbo].grids ([id], [iteration_id])
+);
+
+CREATE TABLE block_definitions
+(
+	[type_id] [varchar] (50) NOT NULL,
+	[subtype_id] [varchar] (50) NOT NULL,
+	[cube_size] [char] (5) NOT NULL,
+	[name] [varchar] (128) NOT NULL,
+	[max_integrity] [decimal] NOT NULL,
+	[critical_integrity_ratio] [decimal] NOT NULL,
+	[general_damage_multiplier] [decimal] NOT NULL,
+	[disassemble_ratio] [decimal] NOT NULL,
+	[deformation_ratio] [decimal] NOT NULL,
+	[mass] [decimal] NOT NULL,
+	[is_air_tight] [bit] NOT NULL,
+	[size_x] [decimal] NOT NULL,
+	[size_y] [decimal] NOT NULL,
+	[size_z] [decimal] NOT NULL,
+	[model_offset_x] [decimal] NOT NULL,
+	[model_offset_y] [decimal] NOT NULL,
+	[model_offset_z] [decimal] NOT NULL,
+	CONSTRAINT PK_block_definitions PRIMARY KEY ([type_id], [subtype_id]),
 );
 
 CREATE TABLE blocks 
@@ -106,15 +111,18 @@ CREATE TABLE blocks
 	[grid_id] [char](20) NOT NULL,
 	[iteration_id] [int] NOT NULL,
 	[built_by] [char] (20) NOT NULL,
-	[name] [varchar] (128) NOT NULL,
-	[type] [varchar] (4) NOT NULL,
-	[max_integrity] [decimal] NOT NULL,
+	[type_id] [varchar] (50) NOT NULL,
+	[subtype_id] [varchar] (50) NOT NULL,
 	[x] [int] NOT NULL,
 	[y] [int] NOT NULL,
 	[z] [int] NOT NULL,
+	[created] [datetime] NOT NULL,
+	[removed] [datetime] NULL,
 	CONSTRAINT PK_blocks PRIMARY KEY ([id], [grid_id], [iteration_id]),
 	CONSTRAINT FK_blocks_grids FOREIGN KEY ([grid_id], [iteration_id])
-	REFERENCES [dbo].[grids] ([id], [iteration_id])
+	REFERENCES [dbo].[grids] ([id], [iteration_id]),
+	CONSTRAINT FK_blocks_block_definition FOREIGN KEY ([type_id], [subtype_id])
+	REFERENCES [dbo].[block_definitions] ([type_id], [subtype_id])
 );
 
 CREATE TABLE spawns
@@ -143,7 +151,7 @@ CREATE TABLE piloting
 	REFERENCES [dbo].[sessions] ([id]),
 );
 
-CREATE TABLE [dbo].[combatlog] 
+CREATE TABLE [dbo].[grid_combatlog] 
 (
 	[session_id] [int] NOT NULL,
 	[attacker_grid_id] [char] (20) NULL,
@@ -184,7 +192,7 @@ CREATE TABLE [dbo].[factions]
 	[termination_date] [datetime] NULL
 );
 
-CREATE TABLE [dbo].[faction_activity] 
+CREATE TABLE [dbo].[factionlog] 
 (
 	[faction_activity_id] [int] IDENTITY(1,1) NOT NULL,
 	[action] [varchar] (30) NOT NULL,

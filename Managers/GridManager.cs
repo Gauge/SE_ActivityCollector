@@ -5,20 +5,22 @@
     using Sandbox.ModAPI;
     using Sandbox.Game.Entities;
     using global::ActivityCollectorPlugin.Descriptions;
-    using System;
     using Sandbox.Game.Entities.Cube;
     using System.Collections.Generic;
+    using VRage.Game.Entity;
 
     public class GridManager : IManager
     {
 
         public bool IsInitialized { get; private set; } = false;
 
+        private Dictionary<long, float> LastBlockIntegrity = new Dictionary<long, float>();
+
         private void OnEntityAdd(IMyEntity entity)
         {
             if (entity is MyCubeGrid)
             {
-                AddNewGrid(entity as MyCubeGrid);
+                AddGrid(entity as MyCubeGrid);
             }
         }
 
@@ -26,15 +28,11 @@
         {
             if (entity is MyCubeGrid)
             {
-                ActivityCollectorPlugin.SessionLogQueue.Enqueue(new GridDescription()
-                {
-                    GridId = entity.EntityId,
-                    Removed = DateTime.Now
-                });
+                RemoveGrid(entity as MyCubeGrid);
             }
         }
 
-        private void AddNewGrid(MyCubeGrid grid)
+        private void AddGrid(MyCubeGrid grid)
         {
             grid.OnNameChanged += OnGridNameChange;
             grid.OnGridSplit += OnGridSplit;
@@ -42,24 +40,48 @@
 
             grid.OnBlockAdded += OnBlockAdded;
             grid.OnBlockRemoved += OnBlockRemoved;
-            grid.OnBlockIntegrityChanged += OnBlockChanged;
+            grid.OnBlockIntegrityChanged += OnBlockIntegrityChanged;
             //grid.OnBlockOwnershipChanged += OnOwnershipChanged;
 
             ActivityCollectorPlugin.SessionLogQueue.Enqueue(new GridDescription()
             {
                 GridId = grid.EntityId,
                 Type = grid.GridSizeEnum.ToString(),
-                Created = DateTime.Now
+                Created = Helper.DateTime
             });
 
             ActivityCollectorPlugin.SessionLogQueue.Enqueue(new GridNameDescription()
             {
                 GridId = grid.EntityId,
                 Name = grid.DisplayName,
-                Timestamp = DateTime.Now
+                Timestamp = Helper.DateTime
             });
 
             AddGridBlocks(grid);
+        }
+
+        private void RemoveGrid(MyCubeGrid grid)
+        {
+            grid.OnNameChanged -= OnGridNameChange;
+            grid.OnGridSplit -= OnGridSplit;
+            //grid.OnStaticChanged -= OnStaticStateChanged;
+
+            grid.OnBlockAdded -= OnBlockAdded;
+            grid.OnBlockRemoved -= OnBlockRemoved;
+
+            //grid.OnBlockIntegrityChanged -= OnBlockIntegrityChanged;
+            //grid.OnBlockOwnershipChanged -= OnOwnershipChanged;
+
+            ActivityCollectorPlugin.SessionLogQueue.Enqueue(new GridDescription()
+            {
+                GridId = grid.EntityId,
+                Removed = Helper.DateTime
+            });
+
+            foreach (MySlimBlock block in grid.GetBlocks())
+            {
+                OnBlockRemoved(block);
+            }
         }
 
         private void OnGridNameChange(MyCubeGrid grid)
@@ -68,7 +90,7 @@
             {
                 GridId = grid.EntityId,
                 Name = grid.DisplayName,
-                Timestamp = DateTime.Now
+                Timestamp = Helper.DateTime
             });
         }
 
@@ -78,7 +100,7 @@
             {
                 GridId = child.EntityId,
                 ParentId = parent.EntityId,
-                SplitWithParent = DateTime.Now
+                SplitWithParent = Helper.DateTime
             });
         }
 
@@ -92,53 +114,187 @@
 
         private void OnBlockAdded(MySlimBlock slim)
         {
+            long blockEntityId = 0;
+            slim.CubeGridChanged += OnBlockCubeGridChanged;
+
+            if (!LastBlockIntegrity.ContainsKey(slim.UniqueId))
+            {
+                LastBlockIntegrity.Add(slim.UniqueId, slim.Integrity);
+            }
+
+            if (slim.FatBlock != null && slim.FatBlock is MyTerminalBlock)
+            {
+                MyTerminalBlock tb = slim.FatBlock as MyTerminalBlock;
+
+                tb.OwnershipChanged += OnBlockOwnershipChanged;
+                blockEntityId = tb.EntityId;
+
+                OnBlockOwnershipChanged(tb);
+
+                if (tb.HasInventory)
+                {
+                    //MyInventoryBase inventory = tb.GetInventoryBase();
+                    //inventory.BeforeContentsChanged += BeforeBlockInventoryChange;
+                    //inventory.ContentsChanged += OnBlockInventoryChange;
+                }
+
+                //    ((MyTerminalBlock)slim.FatBlock).PropertiesChanged += OnBlockPropertyChange;
+                //    ((MyTerminalBlock)slim.FatBlock).SyncPropertyChanged += OnBlockPropertyChange;
+                //    ((MyTerminalBlock)slim.FatBlock).
+                //    ((MyTerminalBlock)slim.FatBlock).GetInventoryBase().ContentsChanged += OnBlockInventoryChange;
+            }
+
             ActivityCollectorPlugin.SessionLogQueue.Enqueue(new BlockDescription()
             {
-                BlockId = slim.UniqueId,
+                BlockEntityId = blockEntityId,
                 GridId = slim.CubeGrid.EntityId,
                 BuiltBy = slim.BuiltBy,
-                Name = slim.BlockDefinition.DisplayNameText,
-                Type = (slim.FatBlock == null) ? "SLIM" : "FAT",
-                MaxIntegrity = slim.BlockDefinition.MaxIntegrity,
+                TypeId = slim.BlockDefinition.Id.TypeId.ToString(),
+                SubTypeId = slim.BlockDefinition.Id.SubtypeId.ToString(),
                 X = slim.Position.X,
                 Y = slim.Position.Y,
-                Z = slim.Position.Z
+                Z = slim.Position.Z,
+                Created = Helper.DateTime
+            });
+        }
+
+        private void OnBlockCubeGridChanged(MySlimBlock slim, MyCubeGrid grid)
+        {
+            ActivityCollectorPlugin.SessionLogQueue.Enqueue(new BlockDescription()
+            {
+                GridId = grid.EntityId,
+                X = slim.Position.X,
+                Y = slim.Position.Y,
+                Z = slim.Position.Z,
+                Removed = Helper.DateTime
+            });
+
+            ActivityCollectorPlugin.SessionLogQueue.Enqueue(new BlockDescription()
+            {
+                GridId = slim.CubeGrid.EntityId,
+                BuiltBy = slim.BuiltBy,
+                TypeId = slim.BlockDefinition.Id.TypeId.ToString(),
+                SubTypeId = slim.BlockDefinition.Id.SubtypeId.ToString(),
+                X = slim.Position.X,
+                Y = slim.Position.Y,
+                Z = slim.Position.Z,
+                Created = Helper.DateTime
             });
         }
 
         private void OnBlockRemoved(MySlimBlock slim)
         {
-            return;
+            slim.CubeGridChanged -= OnBlockCubeGridChanged;
+            if (slim.FatBlock != null && slim.FatBlock is MyTerminalBlock)
+            {
+                //((MyTerminalBlock)slim.FatBlock).PropertiesChanged -= OnBlockPropertyChange;
+            }
+
+            ActivityCollectorPlugin.SessionLogQueue.Enqueue(new BlockDescription()
+            {
+                GridId = slim.CubeGrid.EntityId,
+                X = slim.Position.X,
+                Y = slim.Position.Y,
+                Z = slim.Position.Z,
+                Removed = Helper.DateTime
+            });
         }
 
-        private void OnBlockChanged(MySlimBlock slim)
+        private void OnBlockIntegrityChanged(MySlimBlock slim)
         {
-            return;
+            float integrityDelta = LastBlockIntegrity[slim.UniqueId] - slim.Integrity;
+            if (integrityDelta < 0)
+            {
+                ActivityCollectorPlugin.SessionLogQueue.Enqueue(new CombatDescription()
+                {
+                    VictimGridBlockId = Helper.getBlockId(slim.Position),
+                    VictimGridId = slim.CubeGrid.EntityId,
+                    Type = "Repair",
+                    Damage = integrityDelta,
+                    Integrity = slim.Integrity,
+                    Timestamp = Helper.DateTime
+                });
+            }
+
+            LastBlockIntegrity[slim.UniqueId] = slim.Integrity;
         }
 
-        private void OnOwnershipChanged(MyCubeGrid grid)
+        private void OnBlockOwnershipChanged(MyTerminalBlock block)
         {
-            return;
+            ActivityCollectorPlugin.SessionLogQueue.Enqueue(new BlockOwnershipDescription() {
+                GridId = block.CubeGrid.EntityId,
+                BlockEntityId = block.EntityId,
+                Owner = block.OwnerId,
+                Timestamp = Helper.DateTime
+            });
         }
 
+        //private void OnBlockPropertyChange(MyTerminalBlock block)
+        //{
+        //    List<ITerminalProperty> props = new List<ITerminalProperty>();
+        //    block.GetProperties(props);
 
+        //    StringBuilder b = new StringBuilder();
+        //    foreach (ITerminalProperty prop in props)
+        //    {
+        //        b.Append($"[{prop.Id}] {prop.TypeName}");
+
+        //        if (prop.TypeName == typeof(bool).Name)
+        //        {
+        //            b.Append($" {prop.AsBool().GetValue(block)}\n");
+        //        }
+        //        else if (prop.TypeName == typeof(Color).Name)
+        //        {
+        //            b.Append($" {prop.AsColor().GetValue(block)}\n");
+        //        }
+        //        else if (prop.TypeName == typeof(float).Name)
+        //        {
+        //            b.Append($" {prop.AsFloat().GetValue(block)}\n");
+        //        }
+        //        else if (prop.TypeName == typeof(StringBuilder).Name)
+        //        {
+        //            b.Append($" {prop.As<StringBuilder>().GetValue(block)}\n");
+        //        }
+        //    }
+        //    ActivityCollectorPlugin.log.Info(b.ToString());
+        //}
+
+        //private void OnBlockPropertyChange(SyncBase s)
+        //{
+        //    ActivityCollectorPlugin.log.Info($"[{s.Id}] {s.ValueType} {s as Sync<object, SyncDirection.BothWays> == null} {s as Sync<object, SyncDirection.FromServer> == null}");
+
+        //    ActivityCollectorPlugin.log.Info((s as Sync<object, SyncDirection.FromServer>).ToString());
+        //}
+
+        //private void OnBlockInventoryChange(MyInventoryBase inventory)
+        //{
+        //    if (tempItems != null)
+        //    InventoryDescription.Queue(tempItems, inventory.GetItems().ToArray(), inventory.Entity.EntityId, Helper.DateTime);
+        //}
+
+        //private void BeforeBlockInventoryChange(MyInventoryBase inventory)
+        //{
+        //    tempItems = inventory.GetItems().ToArray();
+        //}
 
         public void Run()
         {
             if (!IsInitialized)
             {
+                Analytics.Start("GridManager_Initialize");
                 HashSet<IMyEntity> entities = new HashSet<IMyEntity>();
                 MyAPIGateway.Entities.GetEntities(entities, x => x is IMyCubeGrid);
 
                 foreach (MyCubeGrid grid in entities)
                 {
-                    AddNewGrid(grid);
+                    AddGrid(grid);
                 }
 
                 MyAPIGateway.Entities.OnEntityAdd += OnEntityAdd;
                 MyAPIGateway.Entities.OnEntityRemove += OnEntityRemove;
 
                 IsInitialized = true;
+                Analytics.Stop("GridManager_Initialize");
             }
         }
     }

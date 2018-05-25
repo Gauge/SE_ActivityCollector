@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ActivityCollectorPlugin.Descriptions
 {
@@ -14,9 +10,11 @@ namespace ActivityCollectorPlugin.Descriptions
 
         public string GetQuery()
         {
-            return string.Format(@"
-INSERT INTO grid_names ([grid_id], [iteration_id], [name], [timestamp])
-VALUES ('{0}', '{1}', '{2}', '{3}');", GridId, ActivityCollectorPlugin.CurrentIteration, Name, Timestamp);
+            return $@"IF (SELECT TOP 1 [name] FROM grid_names WHERE [grid_id] = '{GridId}' ORDER BY [timestamp] DESC) IS NULL OR (SELECT TOP 1 [name] FROM grid_names WHERE [grid_id] = '{GridId}' ORDER BY [timestamp] DESC) <> '{Name}'
+BEGIN
+INSERT INTO grid_names ([grid_id], [session_id], [name], [timestamp])
+VALUES ('{GridId}', '{ActivityCollectorPlugin.CurrentSession}', '{Name}', '{Helper.format(Timestamp)}')
+END;";
         }
     }
 }

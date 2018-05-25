@@ -21,7 +21,7 @@ namespace ActivityCollectorPlugin.Descriptions
                 return string.Format(@"
 INSERT INTO factions ([faction_id], [iteration_id], [tag], [name], [description], [creation_date])
 VALUES ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}');",
-                FactionId, ActivityCollectorPlugin.CurrentIteration, Tag, Name, Description, CreationDate);
+                FactionId, ActivityCollectorPlugin.CurrentIteration, Tag, Name, Description, Helper.format(CreationDate));
             }
             else if (State == FactionState.Edit)
             {
@@ -37,7 +37,7 @@ WHERE [faction_id] = '{3}' AND [iteration_id] = '{4}';
 UPDATE factions
 SET [termination_date] = '{0}'
 WHERE [faction_id] = '{1}' AND [iteration_id] = '{2}';
-", TerminationDate, FactionId, ActivityCollectorPlugin.CurrentIteration);
+", Helper.format(TerminationDate), FactionId, ActivityCollectorPlugin.CurrentIteration);
             }
         }
     }

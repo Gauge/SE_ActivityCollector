@@ -1,10 +1,12 @@
 ﻿using ActivityCollectorPlugin.Managers;
 using NLog;
+using Sandbox.Definitions;
 using Sandbox.ModAPI;
 using System;
 using System.Collections.Concurrent;
 using System.Data.SqlClient;
 using System.IO;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Torch;
@@ -18,7 +20,7 @@ namespace ActivityCollectorPlugin
     public class ActivityCollectorPlugin : TorchPluginBase, ITorchPlugin
     {
         public const string ServerSteamId = "00000000000000000";
-        public const bool DebugMode = false;
+        public const bool DebugMode = true;
 
         public static readonly Logger log = LogManager.GetLogger("ActivityCollector");
         public static ConcurrentQueue<object> SessionLogQueue = new ConcurrentQueue<object>();
@@ -34,6 +36,7 @@ namespace ActivityCollectorPlugin
         private PlayerManager _playerManager;
         private FactionManager _factionManager;
         private GridManager _gridManager;
+        private DefinitionManager _definitionManager;
         private ITorchBase torch;
 
         public override void Init(ITorchBase torchBase)
@@ -48,6 +51,7 @@ namespace ActivityCollectorPlugin
             _combatManager = new CombatManager();
             _factionManager = new FactionManager();
             _gridManager = new GridManager();
+            _definitionManager = new DefinitionManager();
 
             string configPath = Path.Combine(StoragePath, "ActivityCollector.cfg");
             log.Info($"Config location: {configPath}");
@@ -71,13 +75,13 @@ namespace ActivityCollectorPlugin
         /// </summary>
         public override void Update()
         {
-            if (MyAPIGateway.Session != null)
-            {
-                _combatManager.Run();
-                _playerManager.Run();
-                _factionManager.Run();
-                _gridManager.Run();
-            }
+            if (MyAPIGateway.Session == null) return;
+
+            _definitionManager.Run();
+            _gridManager.Run();
+            _combatManager.Run();
+            //_playerManager.Run();
+            //_factionManager.Run();
         }
 
         /// <summary>
@@ -113,7 +117,7 @@ namespace ActivityCollectorPlugin
         {
             log.Info("Starting database logger");
             bool updateSessionNumber = false;
-            SqlCommand command = new SqlCommand("", _sqldatabase);
+            SqlCommand sqlCommand = new SqlCommand("", _sqldatabase);
 
             try
             {
@@ -138,47 +142,49 @@ namespace ActivityCollectorPlugin
                     {
                         Analytics.Start("WriteToDatabase");
 
-                        command.CommandText = "";
-                        int currentMessageCount = 0;
-                        while (SessionLogQueue.Count > 0 && currentMessageCount < 1000)
-                        {    
+
+                        while (SessionLogQueue.Count > 0 /*&& command.Length < 500000*/)
+                        {
+                            StringBuilder command = new StringBuilder();
                             object element = null;
                             SessionLogQueue.TryDequeue(out element);
 
                             if (element is TorchChatMessage)
                             {
                                 TorchChatMessage message = (TorchChatMessage)element;
-                                command.CommandText += string.Format(@"EXEC [dbo].add_chatlog '{0}', '{1}', '{2}';", ((message.AuthorSteamId == null) ? ServerSteamId : message.AuthorSteamId.ToString()), message.Message?.Replace("'", "''"), message.Timestamp);
+                                command.Append(string.Format(@"EXEC [dbo].add_chatlog '{0}', '{1}', '{2}';", ((message.AuthorSteamId == null) ? ServerSteamId : message.AuthorSteamId.ToString()), message.Message?.Replace("'", "''"), Helper.format(message.Timestamp)));
                             }
                             else if (element is ServerState)
                             {
                                 if (((ServerState)element) != ServerState.Running)
                                 {
                                     // run cleanup
-                                    command.CommandText += string.Format(@"
-UPDATE [dbo].[activity]
-SET [state] = 'Unresolved'
-WHERE [state] = 'Active';
+                                    command.Append(string.Format(@"
+                                    UPDATE [dbo].[activity]
+                                    SET [state] = 'Unresolved'
+                                    WHERE [state] = 'Active';
 
-UPDATE [dbo].[piloting]
-SET [end_time] = '{0}', [is_piloting] = 0
-WHERE [is_piloting] = 1;", DateTime.Now);
+                                    UPDATE [dbo].[piloting]
+                                    SET [end_time] = '{0}', [is_piloting] = 0
+                                    WHERE [is_piloting] = 1;", Helper.DateTimeFormated));
                                 }
 
-                                command.CommandText += string.Format(@"
-INSERT INTO [dbo].[sessions] ([iteration_id], [status], [timestamp])
-	Values ((SELECT TOP 1 id FROM iterations order by startdate desc), '{0}', '{1}');", ((ServerState)element).ToString(), DateTime.Now);
+                                command.Append(string.Format(@"
+                                INSERT INTO [dbo].[sessions] ([iteration_id], [status], [timestamp])
+	                                Values ((SELECT TOP 1 id FROM iterations order by startdate desc), '{0}', '{1}');", ((ServerState)element).ToString(), Helper.DateTimeFormated));
                                 updateSessionNumber = true;
                             }
                             else if (element is ISQLQueryData)
                             {
-                                command.CommandText += (element as ISQLQueryData).GetQuery();
+                                command.Append((element as ISQLQueryData).GetQuery());
                             }
 
-                            currentMessageCount++;
+                            sqlCommand.CommandText = command.ToString();
+                            sqlCommand.ExecuteNonQuery();
                         }
 
-                        command.ExecuteNonQuery();
+                        //ActivityCollectorPlugin.log.Info($"Writing string {command.Length}");
+                        //new SqlCommand(command.ToString(), _sqldatabase).BeginExecuteNonQuery();
 
                         if (updateSessionNumber)
                         {
@@ -196,12 +202,13 @@ INSERT INTO [dbo].[sessions] ([iteration_id], [status], [timestamp])
 
                         Analytics.Stop("WriteToDatabase");
                     }
+
                     Thread.Sleep(3000);
                 }
                 catch (Exception e)
                 {
                     log.Error(e.ToString());
-                    log.Error($"Current Query: {command.CommandText}");
+                    log.Error($"Current Query: {sqlCommand.CommandText}");
                 }
             }
         }
