@@ -19,7 +19,6 @@ namespace ActivityCollectorPlugin.Managers
                 MyAPIGateway.Session.Factions.FactionStateChanged += OnFactionStateChanged;
                 IsInitialized = true;
             }
-
         }
 
         private void OnFactionCreated(long id)
@@ -61,7 +60,7 @@ namespace ActivityCollectorPlugin.Managers
 
         private void OnFactionStateChanged(MyFactionStateChange action, long fromFaction, long toFaction, long playerId, long senderId)
         {
-            ActivityCollectorPlugin.SessionLogQueue.Enqueue(new FactionLogDescription()
+            ActivityCollectorPlugin.SessionLogQueue.Enqueue(new FactionActivityDescription()
             {
                 Action = action,
                 FromFaction = MyAPIGateway.Session.Factions.TryGetFactionById(fromFaction),

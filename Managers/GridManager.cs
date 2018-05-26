@@ -1,38 +1,18 @@
 ﻿namespace ActivityCollectorPlugin.Managers
 {
-    using VRage.Game.ModAPI;
-    using VRage.ModAPI;
-    using Sandbox.ModAPI;
     using Sandbox.Game.Entities;
     using global::ActivityCollectorPlugin.Descriptions;
     using Sandbox.Game.Entities.Cube;
     using System.Collections.Generic;
-    using VRage.Game.Entity;
 
     public class GridManager : IManager
     {
 
-        public bool IsInitialized { get; private set; } = false;
+        public bool IsInitialized { get; private set; } = true;
 
         private Dictionary<long, float> LastBlockIntegrity = new Dictionary<long, float>();
 
-        private void OnEntityAdd(IMyEntity entity)
-        {
-            if (entity is MyCubeGrid)
-            {
-                AddGrid(entity as MyCubeGrid);
-            }
-        }
-
-        private void OnEntityRemove(IMyEntity entity)
-        {
-            if (entity is MyCubeGrid)
-            {
-                RemoveGrid(entity as MyCubeGrid);
-            }
-        }
-
-        private void AddGrid(MyCubeGrid grid)
+        public void AddGrid(MyCubeGrid grid)
         {
             grid.OnNameChanged += OnGridNameChange;
             grid.OnGridSplit += OnGridSplit;
@@ -60,7 +40,7 @@
             AddGridBlocks(grid);
         }
 
-        private void RemoveGrid(MyCubeGrid grid)
+        public void RemoveGrid(MyCubeGrid grid)
         {
             grid.OnNameChanged -= OnGridNameChange;
             grid.OnGridSplit -= OnGridSplit;
@@ -279,23 +259,6 @@
 
         public void Run()
         {
-            if (!IsInitialized)
-            {
-                Analytics.Start("GridManager_Initialize");
-                HashSet<IMyEntity> entities = new HashSet<IMyEntity>();
-                MyAPIGateway.Entities.GetEntities(entities, x => x is IMyCubeGrid);
-
-                foreach (MyCubeGrid grid in entities)
-                {
-                    AddGrid(grid);
-                }
-
-                MyAPIGateway.Entities.OnEntityAdd += OnEntityAdd;
-                MyAPIGateway.Entities.OnEntityRemove += OnEntityRemove;
-
-                IsInitialized = true;
-                Analytics.Stop("GridManager_Initialize");
-            }
         }
     }
 }

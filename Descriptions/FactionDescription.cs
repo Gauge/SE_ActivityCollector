@@ -18,26 +18,23 @@ namespace ActivityCollectorPlugin.Descriptions
         {
             if (State == FactionState.Create)
             {
-                return string.Format(@"
+                return $@"
 INSERT INTO factions ([faction_id], [iteration_id], [tag], [name], [description], [creation_date])
-VALUES ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}');",
-                FactionId, ActivityCollectorPlugin.CurrentIteration, Tag, Name, Description, Helper.format(CreationDate));
+    VALUES ('{FactionId}', '{ActivityCollectorPlugin.CurrentIteration}', '{Tag}', '{Name}', '{Description}', '{Helper.format(CreationDate)}');";
             }
             else if (State == FactionState.Edit)
             {
-                return string.Format(@"
+                return $@"
 UPDATE factions
-SET [tag] = '{0}', [name] = '{1}', [description] = '{2}'
-WHERE [faction_id] = '{3}' AND [iteration_id] = '{4}';
-", Tag, Name, Description, FactionId, ActivityCollectorPlugin.CurrentIteration);
+SET [tag] = '{Tag}', [name] = '{Name}', [description] = '{Description}'
+WHERE [faction_id] = '{FactionId}' AND [iteration_id] = '{ActivityCollectorPlugin.CurrentIteration}';";
             }
             else
             {
-                return string.Format(@"
+                return $@"
 UPDATE factions
-SET [termination_date] = '{0}'
-WHERE [faction_id] = '{1}' AND [iteration_id] = '{2}';
-", Helper.format(TerminationDate), FactionId, ActivityCollectorPlugin.CurrentIteration);
+SET [termination_date] = '{Helper.format(TerminationDate)}'
+WHERE [faction_id] = '{FactionId}' AND [iteration_id] = '{ActivityCollectorPlugin.CurrentIteration}';";
             }
         }
     }

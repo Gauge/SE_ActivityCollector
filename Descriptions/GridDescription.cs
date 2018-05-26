@@ -22,7 +22,7 @@ WHERE [id] = '{GridId}' AND [removed] IS NULL;";
 
             }
             else if (Removed == DateTime.MinValue)
-            { //  AND [session_id] IN (SELECT [session_id] FROM sessions WHERE [iteration_id] = '{ActivityCollectorPlugin.CurrentIteration}')
+            {
                 return $@"IF NOT EXISTS (SELECT * FROM grids WHERE [id] = '{GridId}' AND [removed] IS NULL)
 BEGIN
 INSERT INTO grids ([id], [session_id], [type], [created])
@@ -33,7 +33,7 @@ END;";
             {
                 return $@"UPDATE grids
 SET [removed] = '{Helper.format(Removed)}'
-WHERE [id] = '{GridId}' AND [removed] IS NULL;"; // AND [session_id] IN (SELECT [session_id] FROM sessions WHERE [iteration_id] = '{ActivityCollectorPlugin.CurrentIteration}')
+WHERE [id] = '{GridId}' AND [removed] IS NULL;";
 
             }
         }

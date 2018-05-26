@@ -9,7 +9,7 @@ namespace ActivityCollectorPlugin.Descriptions
         public ulong SteamId { get; set; }
         public long PlayerId { get; set; }
         public string Name { get; set; }
-        public int SessionId { get; set; }
+        public int SessionId { get; set; } = ActivityCollectorPlugin.CurrentSession;
         public DateTime Connected { get; set; }
         public DateTime Disconnected { get; set; }
         public LoginState State { get; set; }
@@ -18,47 +18,34 @@ namespace ActivityCollectorPlugin.Descriptions
         {
             if (State == LoginState.Active)
             {
-                return string.Format(@"
-                    SELECT * FROM [dbo].[users] 
-		                WHERE [steam_id] = '{0}';
+                return $@"
+IF NOT EXISTS (SELECT * FROM [users] WHERE [steam_id] = '{SteamId}')
+    INSERT INTO [users] (steam_id) VALUES ('{SteamId}');
 
-                    IF @@ROWCOUNT = 0
-                        INSERT INTO [dbo].[users] ([steam_id])
-                        VALUES ('{0}');
+IF NOT EXISTS (SELECT * FROM [user_names] WHERE [steam_id] = '{SteamId}' AND [username] = '{Name}')
+    INSERT INTO [user_names] ([steam_id], [username], [timestamp]) VALUES ('{SteamId}', '{Name}', '{Helper.format(Connected)}');
+	                
+UPDATE [user_activity]
+SET [state] = 'Unresolved'
+WHERE [steam_id] = '{SteamId}' AND [state] = 'Active';
 
-	                SELECT * FROM [dbo].[usernames]
-		                WHERE [steam_id] = '{0}' AND [username] = '{1}';
-
-	                IF @@ROWCOUNT = 0
-		                INSERT INTO [dbo].[usernames] ([steam_id], [username], [timestamp])
-		                VALUES ('{0}', '{1}', '{2}');
-
-	                UPDATE [dbo].[activity]
-                    SET [state] = 'Unresolved'
-                    WHERE [steam_id] = '{0}' AND [state] = 'Active';
-
-                    INSERT INTO [dbo].[activity] ([steam_id], [player_id], [connected], [state], [session_id]) 
-	                VALUES('{0}', '{4}', '{2}', 'Active', '{3}');", 
-                    SteamId, Name, Helper.format(Connected), SessionId, PlayerId);
+INSERT INTO [user_activity] ([steam_id], [player_id], [connected], [state], [session_id]) 
+    VALUES('{SteamId}', '{PlayerId}', '{Helper.format(Connected)}', 'Active', '{SessionId}');";
             }
             else
             {
-                return string.Format(@"
-                    SELECT * FROM users
-	                WHERE steam_id = '{0}'
+                return $@"
+IF NOT EXISTS (SELECT * FROM [users] WHERE [steam_id] = '{SteamId}')
+    INSERT INTO [user_activity] ([steam_id], [player_id], [disconnected], [state], [session_id], [blocked_id])
+    VALUES ('00000000000000000', '00000000000000000000', '{Helper.format(Disconnected)}', 'Blocked', '{SessionId}', '{SteamId}');
+ELSE
+    UPDATE [user_activity]
+    SET [disconnected] = '{Helper.format(Disconnected)}', [state] = 'Disconnected'
+    WHERE [steam_id] = '{SteamId}' AND [state] = 'Active';
 
-	                IF @@ROWCOUNT = 0
-		                INSERT INTO activity ([steam_id], [player_id], [disconnected], [state], [session_id], [blocked_id])
-		                VALUES ('00000000000000000', '00000000000000000000', '{1}', 'Blocked', '{2}', '{0}');
-	                ELSE
-		                UPDATE [dbo].[activity]
-		                SET [disconnected] = '{1}', [state] = 'Disconnected'
-		                WHERE [steam_id] = '{0}' AND [state] = 'Active';
-
-		                IF @@ROWCOUNT = 0
-			                INSERT INTO [dbo].[activity] ([steam_id], [player_id], [disconnected], [state], [session_id]) 
-			                VALUES ('{0}', '{3}', '{1}', 'Failed', '{2}');",
-                    SteamId, Helper.format(Disconnected), SessionId, PlayerId);
+    IF @@ROWCOUNT = 0
+	    INSERT INTO [user_activity] ([steam_id], [player_id], [disconnected], [state], [session_id]) 
+	    VALUES ('{SteamId}', '{PlayerId}', '{Helper.format(Disconnected)}', 'Failed', '{SessionId}');";
             }
         }
     }

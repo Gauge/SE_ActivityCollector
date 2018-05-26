@@ -4,7 +4,7 @@ using VRage.Game.ModAPI;
 
 namespace ActivityCollectorPlugin.Descriptions
 {
-    public class FactionLogDescription : ISQLQueryData
+    public class FactionActivityDescription : ISQLQueryData
     {
         public MyFactionStateChange Action { get; set; }
         public IMyFaction FromFaction { get; set; }
@@ -39,7 +39,7 @@ IF @@ROWCOUNT = 0
             }
 
             query.Append(string.Format(@"
-INSERT INTO factionlog ([action], [session_id], [from_faction], [to_faction], [player_id], [sender_id], [timestamp])
+INSERT INTO faction_activity ([action], [session_id], [from_faction], [to_faction], [player_id], [sender_id], [timestamp])
 VALUES ('{0}', '{1}', '{2}', '{3}', '{4}', '{5}', '{6}');", 
 Action.ToString(), ActivityCollectorPlugin.CurrentSession, FromFactionId, ToFactionId, PlayerId, SenderId, Helper.format(Timestamp)));
 

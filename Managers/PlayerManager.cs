@@ -1,58 +1,92 @@
 ﻿using ActivityCollectorPlugin.Descriptions;
+using Sandbox.Game.Entities;
+using Sandbox.Game.Entities.Character;
+using Sandbox.Game.World;
 using Sandbox.ModAPI;
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using Torch.API;
-using Torch.API.Managers;
 using VRage.Game.ModAPI;
-using VRage.Game.ModAPI.Interfaces;
 
 namespace ActivityCollectorPlugin.Managers
 {
     public class PlayerManager : IManager
     {
-        private List<IMyPlayer> updatedPlayerList;
-        private List<IMyPlayer> connectedPlayers;
-        private List<IMyPlayer> tempPlayers;
-        private Task listener;
-        private int stateChanges = 0;
-        private bool isUpdated = false;
+        private MySession session;
 
-        public bool IsInitialized => true;
-
-        public PlayerManager(IMultiplayerManagerBase multiplayerManager)
-        {
-            ActivityCollectorPlugin.log.Info($"Initializing Player Manager");
-            multiplayerManager.PlayerJoined += OnClientChange;
-            multiplayerManager.PlayerLeft += OnClientChange;
-            updatedPlayerList = new List<IMyPlayer>();
-            connectedPlayers = new List<IMyPlayer>();
-            tempPlayers = new List<IMyPlayer>();
-
-            listener = new Task(Update);
-        }
+        public bool IsInitialized { get; set; } = false;
 
         public void Run()
         {
-            if (!isUpdated && MyAPIGateway.Session != null)
+            if (!IsInitialized)
             {
-                lock (tempPlayers)
-                {
-                    tempPlayers.Clear();
-                    MyAPIGateway.Players.GetPlayers(tempPlayers);
-                    isUpdated = true;
-                }
+                session = (MySession)MyAPIGateway.Session;
+                session.Players.NewPlayerRequestSucceeded += OnNewPlayerSuccess;
+                session.Players.NewPlayerRequestFailed += OnNewPlayerFailed;
+                session.Players.PlayerRemoved += OnPlayerRemoved;
+                session.Players.PlayersChanged += OnPlayersChanged;
+                session.Players.IdentitiesChanged += OnIdentitiesChanged;
+                //session.Players.PlayerCharacterDied += OnPlayerCharacterDied;
+                IsInitialized = true;
             }
         }
 
-        private void OnControlledEntityChanged(IMyControllableEntity oldEntity, IMyControllableEntity newEntity)
+        private void OnIdentitiesChanged()
+        {
+            ActivityCollectorPlugin.log.Info("Identities have changed!");
+        }
+
+        private void OnPlayersChanged(bool connected, MyPlayer.PlayerId pid)
+        {
+            MyIdentity identity = session.Players.TryGetPlayerIdentity(pid);
+
+            ActivityCollectorPlugin.log.Info($"{identity.DisplayName} has {((connected) ? "Connected" : "Disconnected")}");
+            if (connected)
+            {
+                MyPlayer p;
+                session.Players.TryGetPlayerById(pid, out p);
+                p.Controller.ControlledEntityChanged += OnControlledEntityChanged;
+
+                ActivityCollectorPlugin.SessionLogQueue.Enqueue(new UserDescription()
+                {
+                    SteamId = pid.SteamId,
+                    PlayerId = identity.IdentityId,
+                    Name = identity.DisplayName,
+                    Connected = Helper.DateTime,
+                    State = LoginState.Active
+                });
+            }
+            else
+            {
+                ActivityCollectorPlugin.SessionLogQueue.Enqueue(new UserDescription()
+                {
+                    SteamId = pid.SteamId,
+                    PlayerId = identity.IdentityId,
+                    Name = identity.DisplayName,
+                    Disconnected = Helper.DateTime,
+                    State = LoginState.Disconnected
+                });
+            }
+        }
+
+        private void OnNewPlayerSuccess(MyPlayer.PlayerId pid)
+        {
+            ActivityCollectorPlugin.log.Info($"{pid.SteamId} New Player Success");
+        }
+
+        private void OnPlayerRemoved(MyPlayer.PlayerId pid)
+        {
+            ActivityCollectorPlugin.log.Info($"{pid.SteamId} Has been removed");
+        }
+
+        private void OnNewPlayerFailed(int something)
+        {
+            ActivityCollectorPlugin.log.Info($"{something} New Player");
+        }
+
+        public void OnControlledEntityChanged(Sandbox.Game.Entities.IMyControllableEntity oldEntity, Sandbox.Game.Entities.IMyControllableEntity newEntity)
         {
             if (newEntity == null)
             {
                 long entityId;
-                if (oldEntity.Entity is IMyCharacter)
+                if (oldEntity.Entity is MyCharacter)
                 {
                     entityId = oldEntity.Entity.EntityId;
                 }
@@ -75,18 +109,18 @@ namespace ActivityCollectorPlugin.Managers
             }
             else if (oldEntity == null)
             {
-                if (newEntity.Entity is IMyCharacter)
+                if (newEntity.Entity is MyCharacter)
                 {
                     ActivityCollectorPlugin.SessionLogQueue.Enqueue(new SpawnDescription()
                     {
-                        PlayerId = Helper.GetPlayerIdentityId(newEntity.Entity as IMyCharacter),
+                        PlayerId = Helper.GetPlayerIdentityId(newEntity.Entity as MyCharacter),
                         CharacterId = newEntity.Entity.EntityId,
                         SessionId = ActivityCollectorPlugin.CurrentSession,
-                        SteamId = Helper.GetPlayerSteamId(newEntity.Entity as IMyCharacter),
+                        SteamId = Helper.GetPlayerSteamId(newEntity.Entity as MyCharacter),
                         StartTime = Helper.DateTime
                     });
                 }
-                else if (newEntity.Entity is IMyShipController)
+                else if (newEntity.Entity is MyShipController)
                 {
                     IMyCharacter character = (newEntity.Entity as IMyShipController).LastPilot;
                     ActivityCollectorPlugin.SessionLogQueue.Enqueue(new SpawnDescription()
@@ -99,136 +133,25 @@ namespace ActivityCollectorPlugin.Managers
                     });
                 }
             }
-            else if (newEntity.Entity is IMyCharacter && oldEntity.Entity is IMyShipController)
+            else if (newEntity.Entity is MyCharacter && oldEntity.Entity is IMyShipController)
             {
                 ActivityCollectorPlugin.SessionLogQueue.Enqueue(new PilotControlChangedDescription()
                 {
-                    PlayerId = Helper.GetPlayerIdentityId(newEntity.Entity as IMyCharacter),
+                    PlayerId = Helper.GetPlayerIdentityId(newEntity.Entity as MyCharacter),
                     GridId = (oldEntity.Entity as IMyShipController).CubeGrid.EntityId,
                     SessionId = ActivityCollectorPlugin.CurrentSession,
                     EndTime = Helper.DateTime
                 });
             }
-            else if (oldEntity.Entity is IMyCharacter && newEntity.Entity is IMyShipController)
+            else if (oldEntity.Entity is MyCharacter && newEntity.Entity is IMyShipController)
             {
                 ActivityCollectorPlugin.SessionLogQueue.Enqueue(new PilotControlChangedDescription()
                 {
-                    PlayerId = Helper.GetPlayerIdentityId(oldEntity.Entity as IMyCharacter),
+                    PlayerId = Helper.GetPlayerIdentityId(oldEntity.Entity as MyCharacter),
                     GridId = (newEntity.Entity as IMyShipController).CubeGrid.EntityId,
                     SessionId = ActivityCollectorPlugin.CurrentSession,
                     StartTime = Helper.DateTime
                 });
-            }
-        }
-
-        private void OnClientChange(IPlayer p)
-        {
-            stateChanges++;
-
-            if (listener.Status == TaskStatus.Created || listener.Status == TaskStatus.Canceled || listener.Status == TaskStatus.Faulted || listener.Status == TaskStatus.RanToCompletion)
-            {
-                if (listener.Status == TaskStatus.RanToCompletion)
-                {
-                    listener.Dispose();
-                }
-
-                listener = new Task(Update);
-                listener.Start();
-            }
-        }
-
-        private void Update()
-        {
-            while (stateChanges > 0)
-            {
-                if (!isUpdated) continue;
-
-                //lock (tempPlayers)
-                //{
-                    int tpCount = tempPlayers.Count;
-                    for (int i = 0; i < tpCount; i++)
-                    {
-                        if (i < connectedPlayers.Count)
-                        {
-                            if (connectedPlayers[i] != tempPlayers[i])
-                            {
-                                if (!connectedPlayers.Contains(tempPlayers[i]))
-                                {
-                                    ActivityCollectorPlugin.log.Info($"(i) Adding Player {tempPlayers[i].DisplayName}");
-                                    ActivityCollectorPlugin.SessionLogQueue.Enqueue(new UserDescription()
-                                    {
-                                        SteamId = tempPlayers[i].SteamUserId,
-                                        PlayerId = tempPlayers[i].IdentityId,
-                                        SessionId = ActivityCollectorPlugin.CurrentSession,
-                                        Name = tempPlayers[i].DisplayName,
-                                        Connected = Helper.DateTime,
-                                        State = LoginState.Active
-                                    });
-                                    stateChanges--;
-
-                                    tempPlayers[i].Controller.ControlledEntityChanged += OnControlledEntityChanged;
-                                    connectedPlayers.Insert(i, tempPlayers[i]);
-                                }
-                                else if (!tempPlayers.Contains(connectedPlayers[i]))
-                                {
-                                    ActivityCollectorPlugin.log.Info($"(ra) Removing Player {connectedPlayers[i].DisplayName}");
-                                    ActivityCollectorPlugin.SessionLogQueue.Enqueue(new UserDescription()
-                                    {
-                                        SteamId = connectedPlayers[i].SteamUserId,
-                                        PlayerId = connectedPlayers[i].IdentityId,
-                                        SessionId = ActivityCollectorPlugin.CurrentSession,
-                                        Disconnected = Helper.DateTime,
-                                        State = LoginState.Disconnected
-                                    });
-                                    stateChanges--;
-
-                                    connectedPlayers.RemoveAt(i);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            ActivityCollectorPlugin.log.Info($"(a) Adding Player {tempPlayers[i].DisplayName}");
-                            ActivityCollectorPlugin.SessionLogQueue.Enqueue(new UserDescription()
-                            {
-                                SteamId = tempPlayers[i].SteamUserId,
-                                PlayerId = tempPlayers[i].IdentityId,
-                                SessionId = ActivityCollectorPlugin.CurrentSession,
-                                Name = tempPlayers[i].DisplayName,
-                                Connected = Helper.DateTime,
-                                State = LoginState.Active
-                            });
-                            stateChanges--;
-
-                            tempPlayers[i].Controller.ControlledEntityChanged += OnControlledEntityChanged;
-                            connectedPlayers.Add(tempPlayers[i]);
-                        }
-                    }
-
-                    int cpCount = connectedPlayers.Count;
-                    if (cpCount > tpCount)
-                    {
-                        for (int i = tpCount; i < cpCount; i++)
-                        {
-                            ActivityCollectorPlugin.log.Info($"(rr) Removing Player {connectedPlayers[i].DisplayName}");
-                            ActivityCollectorPlugin.SessionLogQueue.Enqueue(new UserDescription()
-                            {
-                                SteamId = connectedPlayers[i].SteamUserId,
-                                PlayerId = connectedPlayers[i].IdentityId,
-                                SessionId = ActivityCollectorPlugin.CurrentSession,
-                                Disconnected = Helper.DateTime,
-                                State = LoginState.Disconnected
-                            });
-                            stateChanges--;
-                            connectedPlayers.RemoveAt(i);
-                        }
-                    }
-                    
-                    tempPlayers.Clear();
-                //}
-
-                isUpdated = false;
-                Thread.Sleep(2000);
             }
         }
     }

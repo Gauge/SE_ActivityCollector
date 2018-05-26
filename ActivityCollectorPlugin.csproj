@@ -129,7 +129,8 @@
     <Compile Include="Descriptions\BlockOwnershipDescription.cs" />
     <Compile Include="Descriptions\CombatDescription.cs" />
     <Compile Include="Descriptions\ComponentDefinitionDescription.cs" />
-    <Compile Include="Descriptions\FactionLogDescription.cs" />
+    <Compile Include="Descriptions\EntityDefinition.cs" />
+    <Compile Include="Descriptions\FactionActivityDescription.cs" />
     <Compile Include="Descriptions\FactionDescription.cs" />
     <Compile Include="Descriptions\GridDescription.cs" />
     <Compile Include="Descriptions\GridNameDescription.cs" />
@@ -144,6 +145,7 @@
     <Compile Include="Managers\PlayerManager.cs" />
     <Compile Include="Descriptions\SpawnDescription.cs" />
     <Compile Include="Descriptions\PilotControlChangedDescription.cs" />
+    <Compile Include="Managers\EntityManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Descriptions\ISQLQueryData.cs" />
     <Compile Include="Descriptions\UserDescription.cs">

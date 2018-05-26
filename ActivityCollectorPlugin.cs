@@ -1,7 +1,5 @@
 ﻿using ActivityCollectorPlugin.Managers;
 using NLog;
-using Sandbox.Definitions;
-using Sandbox.ModAPI;
 using System;
 using System.Collections.Concurrent;
 using System.Data.SqlClient;
@@ -32,11 +30,7 @@ namespace ActivityCollectorPlugin
         private SqlConnection _sqldatabase;
         private TorchServer _torchServer = null;
         private ServerState _currentServerState;
-        private CombatManager _combatManager;
-        private PlayerManager _playerManager;
-        private FactionManager _factionManager;
-        private GridManager _gridManager;
-        private DefinitionManager _definitionManager;
+        private EntityManager manager;
         private ITorchBase torch;
 
         public override void Init(ITorchBase torchBase)
@@ -48,10 +42,7 @@ namespace ActivityCollectorPlugin
 
             _torchServer = (TorchServer)Torch;
             _currentServerState = _torchServer.State;
-            _combatManager = new CombatManager();
-            _factionManager = new FactionManager();
-            _gridManager = new GridManager();
-            _definitionManager = new DefinitionManager();
+            manager = new EntityManager();
 
             string configPath = Path.Combine(StoragePath, "ActivityCollector.cfg");
             log.Info($"Config location: {configPath}");
@@ -75,13 +66,8 @@ namespace ActivityCollectorPlugin
         /// </summary>
         public override void Update()
         {
-            if (MyAPIGateway.Session == null) return;
-
-            _definitionManager.Run();
-            _gridManager.Run();
-            _combatManager.Run();
-            //_playerManager.Run();
-            //_factionManager.Run();
+            manager.Run();
+            //playerManager.Run();
         }
 
         /// <summary>
@@ -102,8 +88,6 @@ namespace ActivityCollectorPlugin
         {
             if (_torchServer.State == ServerState.Running)
             {
-                _playerManager = new PlayerManager(torch.CurrentSession.Managers.GetManager<IMultiplayerManagerServer>());
-
                 IChatManagerClient chatManager = torch.CurrentSession.Managers.GetManager<IChatManagerClient>();
                 chatManager.MessageRecieved += OnMessageReceived;
                 log.Info($"Added chat hook");
@@ -160,11 +144,11 @@ namespace ActivityCollectorPlugin
                                 {
                                     // run cleanup
                                     command.Append(string.Format(@"
-                                    UPDATE [dbo].[activity]
+                                    UPDATE [dbo].[user_activity]
                                     SET [state] = 'Unresolved'
                                     WHERE [state] = 'Active';
 
-                                    UPDATE [dbo].[piloting]
+                                    UPDATE [dbo].[user_piloting]
                                     SET [end_time] = '{0}', [is_piloting] = 0
                                     WHERE [is_piloting] = 1;", Helper.DateTimeFormated));
                                 }
