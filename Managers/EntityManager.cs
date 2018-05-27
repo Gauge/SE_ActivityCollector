@@ -1,6 +1,5 @@
 ﻿using ActivityCollectorPlugin.Descriptions;
 using Sandbox.Game.Entities;
-using Sandbox.Game.Entities.Character;
 using Sandbox.Game.World;
 using Sandbox.ModAPI;
 using System.Collections.Generic;
@@ -14,10 +13,17 @@ namespace ActivityCollectorPlugin.Managers
         public bool IsInitialized { get; private set; }
 
         DefinitionManager definitionManager = new DefinitionManager();
-        GridManager gridManager = new GridManager();
         CombatManager combatManager = new CombatManager();
         PlayerManager playerManager = new PlayerManager();
         FactionManager factionManager = new FactionManager();
+        InventoryManager inventoryManager = new InventoryManager();
+        //ChatManager chatManager = new ChatManager();
+        GridManager gridManager;
+
+        public EntityManager()
+        {
+             gridManager = new GridManager(inventoryManager);
+        }
 
         private void OnEntityAdd(IMyEntity e)
         {
@@ -37,8 +43,12 @@ namespace ActivityCollectorPlugin.Managers
             {
                 gridManager.AddGrid(entity as MyCubeGrid);
             }
-            else if (entity is MyCharacter) 
+
+            if (entity.HasInventory) 
             {
+                //MyInventoryBase inv = entity.GetInventoryBase();
+                //inv.BeforeContentsChanged += inventoryManager.OnBeforeInventoryChanged;
+                //inv.ContentsChanged += inventoryManager.OnInventoryChanged;
             }
 
             ActivityCollectorPlugin.SessionLogQueue.Enqueue(description);
@@ -86,12 +96,12 @@ namespace ActivityCollectorPlugin.Managers
             }
 
             //gridManager.Run(); // dont need this
+            //inventoryManager.Run();
             definitionManager.Run();
             factionManager.Run();
             combatManager.Run();
             playerManager.Run();
-
-
+            //chatManager.Run();
         }
     }
 }

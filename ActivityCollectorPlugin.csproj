@@ -142,6 +142,7 @@
     <Compile Include="Managers\FactionManager.cs" />
     <Compile Include="Managers\GridManager.cs" />
     <Compile Include="Managers\IManager.cs" />
+    <Compile Include="Managers\InventoryManager.cs" />
     <Compile Include="Managers\PlayerManager.cs" />
     <Compile Include="Descriptions\SpawnDescription.cs" />
     <Compile Include="Descriptions\PilotControlChangedDescription.cs" />

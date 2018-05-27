@@ -70,15 +70,15 @@ namespace ActivityCollectorPlugin
             //playerManager.Run();
         }
 
-        /// <summary>
-        /// Sends ingame chat messages to be writen to the database
-        /// </summary>
-        /// <param name="message"></param>
-        /// <param name="sendToOthers"></param>
-        public void OnMessageReceived(TorchChatMessage message, ref bool sendToOthers)
-        {
-            SessionLogQueue.Enqueue(message);
-        }
+        ///// <summary>
+        ///// Sends ingame chat messages to be writen to the database
+        ///// </summary>
+        ///// <param name="message"></param>
+        ///// <param name="sendToOthers"></param>
+        //public void OnMessageReceived(TorchChatMessage message, ref bool sendToOthers)
+        //{
+        //    SessionLogQueue.Enqueue(message);
+        //}
 
         /// <summary>
         /// Initializes data collection liseners
@@ -86,12 +86,12 @@ namespace ActivityCollectorPlugin
         /// </summary>
         private void OnServerStateChanged()
         {
-            if (_torchServer.State == ServerState.Running)
-            {
-                IChatManagerClient chatManager = torch.CurrentSession.Managers.GetManager<IChatManagerClient>();
-                chatManager.MessageRecieved += OnMessageReceived;
-                log.Info($"Added chat hook");
-            }
+            //if (_torchServer.State == ServerState.Running)
+            //{
+            //    IChatManagerClient chatManager = torch.CurrentSession.Managers.GetManager<IChatManagerClient>();
+            //    chatManager.MessageRecieved += OnMessageReceived;
+            //    log.Info($"Added chat hook");
+            //}
 
             _currentServerState = _torchServer.State;
             SessionLogQueue.Enqueue(_currentServerState);
@@ -133,12 +133,12 @@ namespace ActivityCollectorPlugin
                             object element = null;
                             SessionLogQueue.TryDequeue(out element);
 
-                            if (element is TorchChatMessage)
-                            {
-                                TorchChatMessage message = (TorchChatMessage)element;
-                                command.Append(string.Format(@"EXEC [dbo].add_chatlog '{0}', '{1}', '{2}';", ((message.AuthorSteamId == null) ? ServerSteamId : message.AuthorSteamId.ToString()), message.Message?.Replace("'", "''"), Helper.format(message.Timestamp)));
-                            }
-                            else if (element is ServerState)
+                            //if (element is TorchChatMessage)
+                            //{
+                            //    TorchChatMessage message = (TorchChatMessage)element;
+                            //    command.Append(string.Format(@"EXEC [dbo].add_chatlog '{0}', '{1}', '{2}';", ((message.AuthorSteamId == null) ? ServerSteamId : message.AuthorSteamId.ToString()), message.Message?.Replace("'", "''"), Helper.format(message.Timestamp)));
+                            //}
+                            /*else*/ if (element is ServerState)
                             {
                                 if (((ServerState)element) != ServerState.Running)
                                 {

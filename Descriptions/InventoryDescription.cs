@@ -1,30 +1,35 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using VRage.Game.Entity;
+﻿using System.Text;
+using VRage;
+
 
 namespace ActivityCollectorPlugin.Descriptions
 {
-    class InventoryDescription : ISQLQueryData
+    public class InventoryDescription : ISQLQueryData
     {
 
-        public long BlockId { get; set; }
-        public bool IsItemAdded { get; set; }
-        public DateTime Timestamp { get; set; }
+        //public long BlockId { get; set; }
+        //public bool IsItemAdded { get; set; }
+        //public DateTime Timestamp { get; set; }
+
+        private StringBuilder query = new StringBuilder();
+
+        public InventoryDescription()
+        {
+            query.Append($@"INSERT INTO [entity_inventories] ([entity_id], [block_id], [item_id], [amount], [durability], [type_id], [subtype_id], [session_id], [timestamp])
+            VALUES");
+        }
 
         public string GetQuery()
         {
-            throw new NotImplementedException();
+            return query.ToString().TrimEnd(',');
         }
 
-        public async static void Queue(MyPhysicalInventoryItem[] old, MyPhysicalInventoryItem[] current, long BlockId, DateTime timestamp)
+
+        public void Add(long EntityId, long? BlockId, uint ItemId, MyFixedPoint Amount, float? durability, string TypeId, string SubtypeId)
         {
-            IEnumerable<MyPhysicalInventoryItem> change = current.Except(old);
-
-            foreach (MyPhysicalInventoryItem item in change)
-            {
-                ActivityCollectorPlugin.log.Info($"[{item.ItemId}] Name: {item.Content.TypeId}/{item.Content.SubtypeId} | Quanity: {item.Amount}");
-            }
+            query.Append($@"
+('{EntityId}', '{((BlockId.HasValue) ? BlockId.Value.ToString() : "NULL")}', {ItemId}, {Amount}, {((durability.HasValue) ? durability.Value.ToString() : "NULL")}, '{TypeId}', '{SubtypeId}', {ActivityCollectorPlugin.CurrentSession}, '{Helper.DateTimeFormated}'),");
         }
+
     }
 }

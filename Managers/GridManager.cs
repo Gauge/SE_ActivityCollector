@@ -10,6 +10,13 @@
 
         public bool IsInitialized { get; private set; } = true;
 
+        private InventoryManager inventoryManager;
+
+        public GridManager(InventoryManager im)
+        {
+            inventoryManager = im;
+        }
+
         private Dictionary<long, float> LastBlockIntegrity = new Dictionary<long, float>();
 
         public void AddGrid(MyCubeGrid grid)
@@ -114,8 +121,8 @@
                 if (tb.HasInventory)
                 {
                     //MyInventoryBase inventory = tb.GetInventoryBase();
-                    //inventory.BeforeContentsChanged += BeforeBlockInventoryChange;
-                    //inventory.ContentsChanged += OnBlockInventoryChange;
+                    //inventory.BeforeContentsChanged += inventoryManager.OnBeforeInventoryChanged;
+                    //inventory.ContentsChanged += inventoryManager.OnInventoryChanged;
                 }
 
                 //    ((MyTerminalBlock)slim.FatBlock).PropertiesChanged += OnBlockPropertyChange;
@@ -246,16 +253,7 @@
         //    ActivityCollectorPlugin.log.Info((s as Sync<object, SyncDirection.FromServer>).ToString());
         //}
 
-        //private void OnBlockInventoryChange(MyInventoryBase inventory)
-        //{
-        //    if (tempItems != null)
-        //    InventoryDescription.Queue(tempItems, inventory.GetItems().ToArray(), inventory.Entity.EntityId, Helper.DateTime);
-        //}
 
-        //private void BeforeBlockInventoryChange(MyInventoryBase inventory)
-        //{
-        //    tempItems = inventory.GetItems().ToArray();
-        //}
 
         public void Run()
         {

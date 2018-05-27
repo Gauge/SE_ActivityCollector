@@ -1,4 +1,5 @@
-﻿using Sandbox.Game.World;
+﻿using Sandbox.Game.Entities.Character;
+using Sandbox.Game.World;
 using Sandbox.ModAPI;
 using System;
 using System.Collections.Generic;
@@ -10,11 +11,23 @@ namespace ActivityCollectorPlugin.Managers
 {
     class ChatManager : IManager
     {
-        public bool IsInitialized => throw new NotImplementedException();
+        public bool IsInitialized { get; set; } = false;
 
+        private MySession session;
 
-        private void OnFactionMessageReceived()
+        private void OnFactionMessageReceived(long faction_id)
         {
+            return;
+        }
+
+        private void OnGlobalMessageRecived()
+        {
+            return;
+        }
+
+        private void OnPlayerMessageRecived(long player)
+        {
+            return;
         }
 
 
@@ -22,13 +35,13 @@ namespace ActivityCollectorPlugin.Managers
         {
             if (!IsInitialized)
             {
-                MySession session = (MyAPIGateway.Session as MySession);
+                session = (MyAPIGateway.Session as MySession);
+                session.ChatSystem.GlobalMessageReceived += OnGlobalMessageRecived;
+                session.ChatSystem.FactionMessageReceived += OnFactionMessageReceived;
+                session.ChatSystem.PlayerMessageReceived += OnPlayerMessageRecived;
 
-                //session.SessionSimSpeedServer;
-                //session.ChatSystem.FactionMessageReceived
+                IsInitialized = true;
             }
-
-            throw new NotImplementedException();
         }
     }
 }
