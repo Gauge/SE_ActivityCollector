@@ -162,7 +162,6 @@ CREATE TABLE [dbo].[definition_blocks](
 	[max_integrity] [decimal](22, 7) NOT NULL,
 	[critical_integrity_ratio] [decimal](22, 7) NOT NULL,
 	[general_damage_multiplier] [decimal](22, 7) NOT NULL,
-	[disassemble_ratio] [decimal](22, 7) NOT NULL,
 	[deformation_ratio] [decimal](22, 7) NOT NULL,
 	[mass] [decimal](22, 7) NOT NULL,
 	[is_air_tight] [bit] NOT NULL,

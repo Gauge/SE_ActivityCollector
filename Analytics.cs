@@ -24,7 +24,7 @@ namespace ActivityCollectorPlugin
             if (timers.ContainsKey(name) && ActivityCollectorPlugin.DebugMode)
             {
                 timers[name].Stop();
-                ActivityCollectorPlugin.log.Info($"[{name}] {timers[name].ElapsedTicks / (Stopwatch.Frequency / 1000d)}ms");
+                ActivityCollectorPlugin.log.Info($"[{name}] {(timers[name].ElapsedTicks * 1000d) / Stopwatch.Frequency}ms");
             }
         }
     }

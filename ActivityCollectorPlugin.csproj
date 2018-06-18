@@ -157,28 +157,6 @@
     <Content Include="DB_Scripts\1_create_database.sql">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="DB_Scripts\2_1_func_get_session_id.sql">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="DB_Scripts\3_proc_add_activity_connect.sql">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="DB_Scripts\4_proc_update_activity_disconnect.sql">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="DB_Scripts\5_proc_add_chatlog.sql">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="DB_Scripts\2_2_func_get_current_iteration.sql">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="DB_Scripts\6_proc_add_session.sql">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="DB_Scripts\7_proc_cleanup_activity.sql">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="DB_Scripts\8_proc_add_kill.sql" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

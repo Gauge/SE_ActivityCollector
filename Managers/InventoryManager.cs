@@ -51,7 +51,7 @@ namespace ActivityCollectorPlugin.Managers
 
             LastInventory[inventoryId] = newInventory;
 
-            ActivityCollectorPlugin.SessionLogQueue.Enqueue(description);
+            ActivityCollectorPlugin.Enqueue(description);
             //Analytics.Stop("InventoryChanged");
         }
 

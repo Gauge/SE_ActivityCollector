@@ -51,7 +51,7 @@ namespace ActivityCollectorPlugin.Managers
                 //inv.ContentsChanged += inventoryManager.OnInventoryChanged;
             }
 
-            ActivityCollectorPlugin.SessionLogQueue.Enqueue(description);
+            ActivityCollectorPlugin.Enqueue(description);
         }
 
         private void OnEntityRemove(IMyEntity e)
@@ -69,7 +69,7 @@ namespace ActivityCollectorPlugin.Managers
                 Removed = Helper.DateTime
             };
 
-            ActivityCollectorPlugin.SessionLogQueue.Enqueue(description);
+            ActivityCollectorPlugin.Enqueue(description);
 
             if (entity is MyCubeGrid)
             {

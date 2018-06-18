@@ -20,7 +20,7 @@ namespace ActivityCollectorPlugin.Descriptions
             {
                 return $@"
 INSERT INTO factions ([faction_id], [iteration_id], [tag], [name], [description], [creation_date])
-    VALUES ('{FactionId}', '{ActivityCollectorPlugin.CurrentIteration}', '{Tag}', '{Name}', '{Description}', '{Helper.format(CreationDate)}');";
+    VALUES ('{FactionId}', '{ActivityCollectorPlugin.CurrentIteration}', '{Tag}', '{Helper.prepString(Name)}', '{Helper.prepString(Description)}', '{Helper.format(CreationDate)}');";
             }
             else if (State == FactionState.Edit)
             {

@@ -100,5 +100,15 @@ namespace ActivityCollectorPlugin
         {
             return getBlockId(pos.X, pos.Y, pos.Z);
         }
+
+        public static string prepString(string data)
+        {
+            return data.Replace("'", "''");
+        }
+
+        public static float round(float value)
+        {
+            return (float)(Math.Round((double)value, 3));
+        }
     }
 }

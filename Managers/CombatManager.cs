@@ -232,7 +232,7 @@ namespace ActivityCollectorPlugin.Managers
                 ActivityCollectorPlugin.log.Error($"Unknown attacker entity of type: {entity.GetType()}");
             }
 
-            ActivityCollectorPlugin.SessionLogQueue.Enqueue(log);
+            ActivityCollectorPlugin.Enqueue(log);
         }
 
         private void CauseKeenHacks(object target, MyDamageInformation info)

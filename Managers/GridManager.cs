@@ -30,14 +30,14 @@
             grid.OnBlockIntegrityChanged += OnBlockIntegrityChanged;
             //grid.OnBlockOwnershipChanged += OnOwnershipChanged;
 
-            ActivityCollectorPlugin.SessionLogQueue.Enqueue(new GridDescription()
+            ActivityCollectorPlugin.Enqueue(new GridDescription()
             {
                 GridId = grid.EntityId,
                 Type = grid.GridSizeEnum.ToString(),
                 Created = Helper.DateTime
             });
 
-            ActivityCollectorPlugin.SessionLogQueue.Enqueue(new GridNameDescription()
+            ActivityCollectorPlugin.Enqueue(new GridNameDescription()
             {
                 GridId = grid.EntityId,
                 Name = grid.DisplayName,
@@ -59,7 +59,7 @@
             //grid.OnBlockIntegrityChanged -= OnBlockIntegrityChanged;
             //grid.OnBlockOwnershipChanged -= OnOwnershipChanged;
 
-            ActivityCollectorPlugin.SessionLogQueue.Enqueue(new GridDescription()
+            ActivityCollectorPlugin.Enqueue(new GridDescription()
             {
                 GridId = grid.EntityId,
                 Removed = Helper.DateTime
@@ -73,7 +73,7 @@
 
         private void OnGridNameChange(MyCubeGrid grid)
         {
-            ActivityCollectorPlugin.SessionLogQueue.Enqueue(new GridNameDescription()
+            ActivityCollectorPlugin.Enqueue(new GridNameDescription()
             {
                 GridId = grid.EntityId,
                 Name = grid.DisplayName,
@@ -83,7 +83,7 @@
 
         private void OnGridSplit(MyCubeGrid parent, MyCubeGrid child)
         {
-            ActivityCollectorPlugin.SessionLogQueue.Enqueue(new GridDescription()
+            ActivityCollectorPlugin.Enqueue(new GridDescription()
             {
                 GridId = child.EntityId,
                 ParentId = parent.EntityId,
@@ -131,7 +131,7 @@
                 //    ((MyTerminalBlock)slim.FatBlock).GetInventoryBase().ContentsChanged += OnBlockInventoryChange;
             }
 
-            ActivityCollectorPlugin.SessionLogQueue.Enqueue(new BlockDescription()
+            ActivityCollectorPlugin.Enqueue(new BlockDescription()
             {
                 BlockEntityId = blockEntityId,
                 GridId = slim.CubeGrid.EntityId,
@@ -147,7 +147,7 @@
 
         private void OnBlockCubeGridChanged(MySlimBlock slim, MyCubeGrid grid)
         {
-            ActivityCollectorPlugin.SessionLogQueue.Enqueue(new BlockDescription()
+            ActivityCollectorPlugin.Enqueue(new BlockDescription()
             {
                 GridId = grid.EntityId,
                 X = slim.Position.X,
@@ -156,7 +156,7 @@
                 Removed = Helper.DateTime
             });
 
-            ActivityCollectorPlugin.SessionLogQueue.Enqueue(new BlockDescription()
+            ActivityCollectorPlugin.Enqueue(new BlockDescription()
             {
                 GridId = slim.CubeGrid.EntityId,
                 BuiltBy = slim.BuiltBy,
@@ -177,7 +177,7 @@
                 //((MyTerminalBlock)slim.FatBlock).PropertiesChanged -= OnBlockPropertyChange;
             }
 
-            ActivityCollectorPlugin.SessionLogQueue.Enqueue(new BlockDescription()
+            ActivityCollectorPlugin.Enqueue(new BlockDescription()
             {
                 GridId = slim.CubeGrid.EntityId,
                 X = slim.Position.X,
@@ -189,10 +189,15 @@
 
         private void OnBlockIntegrityChanged(MySlimBlock slim)
         {
+            if (!LastBlockIntegrity.ContainsKey(slim.UniqueId))
+            {
+                LastBlockIntegrity.Add(slim.UniqueId, slim.Integrity);
+            }
+
             float integrityDelta = LastBlockIntegrity[slim.UniqueId] - slim.Integrity;
             if (integrityDelta < 0)
             {
-                ActivityCollectorPlugin.SessionLogQueue.Enqueue(new CombatDescription()
+                ActivityCollectorPlugin.Enqueue(new CombatDescription()
                 {
                     VictimGridBlockId = Helper.getBlockId(slim.Position),
                     VictimGridId = slim.CubeGrid.EntityId,
@@ -208,7 +213,7 @@
 
         private void OnBlockOwnershipChanged(MyTerminalBlock block)
         {
-            ActivityCollectorPlugin.SessionLogQueue.Enqueue(new BlockOwnershipDescription() {
+            ActivityCollectorPlugin.Enqueue(new BlockOwnershipDescription() {
                 GridId = block.CubeGrid.EntityId,
                 BlockEntityId = block.EntityId,
                 Owner = block.OwnerId,

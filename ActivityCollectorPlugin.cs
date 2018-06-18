@@ -1,7 +1,7 @@
 ﻿using ActivityCollectorPlugin.Managers;
 using NLog;
 using System;
-using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.IO;
 using System.Text;
@@ -9,7 +9,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Torch;
 using Torch.API;
-using Torch.API.Managers;
 using Torch.API.Plugins;
 using Torch.Server;
 
@@ -18,10 +17,10 @@ namespace ActivityCollectorPlugin
     public class ActivityCollectorPlugin : TorchPluginBase, ITorchPlugin
     {
         public const string ServerSteamId = "00000000000000000";
-        public const bool DebugMode = true;
+        public const bool DebugMode = false;
 
         public static readonly Logger log = LogManager.GetLogger("ActivityCollector");
-        public static ConcurrentQueue<object> SessionLogQueue = new ConcurrentQueue<object>();
+        private static Queue<object> DataQueue = new Queue<object>();
         public static int CurrentSession { get; private set; }
         public static int CurrentIteration { get; private set; }
 
@@ -50,6 +49,7 @@ namespace ActivityCollectorPlugin
             {
                 _config = Persistent<ActivityCollectorConfig>.Load(configPath);
                 _config.Data.DB_Connection_String = ActivityCollectorConfig.Default_DB_Connection_String;
+                _config.Data.DebugMode = false;
                 _config.Save();
             }
             else
@@ -67,18 +67,7 @@ namespace ActivityCollectorPlugin
         public override void Update()
         {
             manager.Run();
-            //playerManager.Run();
         }
-
-        ///// <summary>
-        ///// Sends ingame chat messages to be writen to the database
-        ///// </summary>
-        ///// <param name="message"></param>
-        ///// <param name="sendToOthers"></param>
-        //public void OnMessageReceived(TorchChatMessage message, ref bool sendToOthers)
-        //{
-        //    SessionLogQueue.Enqueue(message);
-        //}
 
         /// <summary>
         /// Initializes data collection liseners
@@ -86,15 +75,8 @@ namespace ActivityCollectorPlugin
         /// </summary>
         private void OnServerStateChanged()
         {
-            //if (_torchServer.State == ServerState.Running)
-            //{
-            //    IChatManagerClient chatManager = torch.CurrentSession.Managers.GetManager<IChatManagerClient>();
-            //    chatManager.MessageRecieved += OnMessageReceived;
-            //    log.Info($"Added chat hook");
-            //}
-
             _currentServerState = _torchServer.State;
-            SessionLogQueue.Enqueue(_currentServerState);
+            DataQueue.Enqueue(_currentServerState);
         }
 
         private void WriteToDatabase()
@@ -122,23 +104,22 @@ namespace ActivityCollectorPlugin
                         ServerStateChanged?.Invoke();
                     }
 
-                    if (SessionLogQueue.Count > 0)
+                    if (DataQueue.Count > 0)
                     {
                         Analytics.Start("WriteToDatabase");
 
-
-                        while (SessionLogQueue.Count > 0 /*&& command.Length < 500000*/)
+                        object element;
+                        int count = DataQueue.Count;
+                        for (int i = 0; i<count; i++)
                         {
                             StringBuilder command = new StringBuilder();
-                            object element = null;
-                            SessionLogQueue.TryDequeue(out element);
 
-                            //if (element is TorchChatMessage)
-                            //{
-                            //    TorchChatMessage message = (TorchChatMessage)element;
-                            //    command.Append(string.Format(@"EXEC [dbo].add_chatlog '{0}', '{1}', '{2}';", ((message.AuthorSteamId == null) ? ServerSteamId : message.AuthorSteamId.ToString()), message.Message?.Replace("'", "''"), Helper.format(message.Timestamp)));
-                            //}
-                            /*else*/ if (element is ServerState)
+                            lock (DataQueue)
+                            {
+                                element = DataQueue.Dequeue();
+                            }
+
+                            if (element is ServerState)
                             {
                                 if (((ServerState)element) != ServerState.Running)
                                 {
@@ -167,9 +148,6 @@ namespace ActivityCollectorPlugin
                             sqlCommand.ExecuteNonQuery();
                         }
 
-                        //ActivityCollectorPlugin.log.Info($"Writing string {command.Length}");
-                        //new SqlCommand(command.ToString(), _sqldatabase).BeginExecuteNonQuery();
-
                         if (updateSessionNumber)
                         {
                             SqlCommand sessionator = new SqlCommand("SELECT TOP 1 [id], [iteration_id] FROM sessions ORDER BY [id] DESC;", _sqldatabase);
@@ -195,6 +173,22 @@ namespace ActivityCollectorPlugin
                     log.Error($"Current Query: {sqlCommand.CommandText}");
                 }
             }
+
+        }
+
+        private static WaitCallback EnqueueCallback = new WaitCallback(PoolFunc);
+
+        private static void PoolFunc(object data)
+        {
+            lock(DataQueue)
+            {
+                DataQueue.Enqueue(data);
+            }
+        }
+
+        public static void Enqueue(object data)
+        {
+            ThreadPool.QueueUserWorkItem(EnqueueCallback, data);
         }
     }
 }

@@ -44,7 +44,7 @@ namespace ActivityCollectorPlugin.Managers
                 session.Players.TryGetPlayerById(pid, out p);
                 p.Controller.ControlledEntityChanged += OnControlledEntityChanged;
 
-                ActivityCollectorPlugin.SessionLogQueue.Enqueue(new UserDescription()
+                ActivityCollectorPlugin.Enqueue(new UserDescription()
                 {
                     SteamId = pid.SteamId,
                     PlayerId = identity.IdentityId,
@@ -55,7 +55,7 @@ namespace ActivityCollectorPlugin.Managers
             }
             else
             {
-                ActivityCollectorPlugin.SessionLogQueue.Enqueue(new UserDescription()
+                ActivityCollectorPlugin.Enqueue(new UserDescription()
                 {
                     SteamId = pid.SteamId,
                     PlayerId = identity.IdentityId,
@@ -100,7 +100,7 @@ namespace ActivityCollectorPlugin.Managers
                     return;
                 }
 
-                ActivityCollectorPlugin.SessionLogQueue.Enqueue(new SpawnDescription()
+                ActivityCollectorPlugin.Enqueue(new SpawnDescription()
                 {
                     CharacterId = entityId,
                     SessionId = ActivityCollectorPlugin.CurrentSession,
@@ -111,7 +111,7 @@ namespace ActivityCollectorPlugin.Managers
             {
                 if (newEntity.Entity is MyCharacter)
                 {
-                    ActivityCollectorPlugin.SessionLogQueue.Enqueue(new SpawnDescription()
+                    ActivityCollectorPlugin.Enqueue(new SpawnDescription()
                     {
                         PlayerId = Helper.GetPlayerIdentityId(newEntity.Entity as MyCharacter),
                         CharacterId = newEntity.Entity.EntityId,
@@ -123,7 +123,7 @@ namespace ActivityCollectorPlugin.Managers
                 else if (newEntity.Entity is MyShipController)
                 {
                     IMyCharacter character = (newEntity.Entity as IMyShipController).LastPilot;
-                    ActivityCollectorPlugin.SessionLogQueue.Enqueue(new SpawnDescription()
+                    ActivityCollectorPlugin.Enqueue(new SpawnDescription()
                     {
                         PlayerId = Helper.GetPlayerIdentityId(character),
                         CharacterId = character.EntityId,
@@ -135,7 +135,7 @@ namespace ActivityCollectorPlugin.Managers
             }
             else if (newEntity.Entity is MyCharacter && oldEntity.Entity is IMyShipController)
             {
-                ActivityCollectorPlugin.SessionLogQueue.Enqueue(new PilotControlChangedDescription()
+                ActivityCollectorPlugin.Enqueue(new PilotControlChangedDescription()
                 {
                     PlayerId = Helper.GetPlayerIdentityId(newEntity.Entity as MyCharacter),
                     GridId = (oldEntity.Entity as IMyShipController).CubeGrid.EntityId,
@@ -145,7 +145,7 @@ namespace ActivityCollectorPlugin.Managers
             }
             else if (oldEntity.Entity is MyCharacter && newEntity.Entity is IMyShipController)
             {
-                ActivityCollectorPlugin.SessionLogQueue.Enqueue(new PilotControlChangedDescription()
+                ActivityCollectorPlugin.Enqueue(new PilotControlChangedDescription()
                 {
                     PlayerId = Helper.GetPlayerIdentityId(oldEntity.Entity as MyCharacter),
                     GridId = (newEntity.Entity as IMyShipController).CubeGrid.EntityId,

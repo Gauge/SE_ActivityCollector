@@ -28,7 +28,7 @@ namespace ActivityCollectorPlugin.Managers
             if (faction != null)
             {
                 ActivityCollectorPlugin.log.Info($"New Faction Created: {faction.Tag} | {faction.Name}");
-                ActivityCollectorPlugin.SessionLogQueue.Enqueue(new FactionDescription()
+                ActivityCollectorPlugin.Enqueue(new FactionDescription()
                 {
                     FactionId = id,
                     Tag = faction.Tag,
@@ -47,7 +47,7 @@ namespace ActivityCollectorPlugin.Managers
             if (faction != null)
             {
                 ActivityCollectorPlugin.log.Info($"Faction Edited: {faction.Tag} | {faction.Name}");
-                ActivityCollectorPlugin.SessionLogQueue.Enqueue(new FactionDescription()
+                ActivityCollectorPlugin.Enqueue(new FactionDescription()
                 {
                     FactionId = id,
                     Tag = faction.Tag,
@@ -60,7 +60,7 @@ namespace ActivityCollectorPlugin.Managers
 
         private void OnFactionStateChanged(MyFactionStateChange action, long fromFaction, long toFaction, long playerId, long senderId)
         {
-            ActivityCollectorPlugin.SessionLogQueue.Enqueue(new FactionActivityDescription()
+            ActivityCollectorPlugin.Enqueue(new FactionActivityDescription()
             {
                 Action = action,
                 FromFaction = MyAPIGateway.Session.Factions.TryGetFactionById(fromFaction),
@@ -79,7 +79,7 @@ namespace ActivityCollectorPlugin.Managers
                 if (faction != null)
                 {
                     ActivityCollectorPlugin.log.Info($"Faction Removed: {faction.Tag} | {faction.Name}");
-                    ActivityCollectorPlugin.SessionLogQueue.Enqueue(new FactionDescription()
+                    ActivityCollectorPlugin.Enqueue(new FactionDescription()
                     {
                         FactionId = fromFaction,
                         TerminationDate = Helper.DateTime,

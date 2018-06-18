@@ -24,7 +24,7 @@ namespace ActivityCollectorPlugin.Managers
             Analytics.Start("ComponentDefinitions");
             foreach (MyComponentDefinition c in MyDefinitionManager.Static.GetDefinitionsOfType<MyComponentDefinition>())
             {
-                ActivityCollectorPlugin.SessionLogQueue.Enqueue(new ComponentDefinitionDescription()
+                ActivityCollectorPlugin.Enqueue(new ComponentDefinitionDescription()
                 {
                     TypeId = c.Id.TypeId.ToString(),
                     SubtypeId = c.Id.SubtypeId.ToString(),
@@ -42,7 +42,7 @@ namespace ActivityCollectorPlugin.Managers
             Analytics.Start("CubeBlockDefinitions");
             foreach (MyCubeBlockDefinition cube in MyDefinitionManager.Static.GetDefinitionsOfType<MyCubeBlockDefinition>())
             {
-                ActivityCollectorPlugin.SessionLogQueue.Enqueue(new BlockDefinitionDescription()
+                ActivityCollectorPlugin.Enqueue(new BlockDefinitionDescription()
                 {
                     TypeId = cube.Id.TypeId.ToString(),
                     SubTypeId = cube.Id.SubtypeId.ToString(),
@@ -51,7 +51,7 @@ namespace ActivityCollectorPlugin.Managers
                     MaxIntegrity = cube.MaxIntegrity,
                     CriticalIntegrityRatio = cube.CriticalIntegrityRatio,
                     GeneralDamageMultiplier = cube.GeneralDamageMultiplier,
-                    DisassembleRatio = cube.DisassembleRatio,
+                    //DisassembleRatio = cube.DisassembleRatio,
                     DeformationRatio = cube.DeformationRatio,
                     Mass = cube.Mass,
                     IsAirTight = cube.IsAirTight,
