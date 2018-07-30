@@ -1,10 +1,12 @@
 ﻿using System.Text;
 using VRage;
 
-
 namespace ActivityCollectorPlugin.Descriptions
 {
-    public class InventoryDescription : ISQLQueryData
+    public enum InvAction { Add, Remove, Current };
+    public enum InvType { Input, Output };
+
+    public class InventoryDescription : SQLQueryData
     {
 
         //public long BlockId { get; set; }
@@ -15,20 +17,25 @@ namespace ActivityCollectorPlugin.Descriptions
 
         public InventoryDescription()
         {
-            query.Append($@"INSERT INTO [entity_inventories] ([entity_id], [block_id], [item_id], [amount], [durability], [type_id], [subtype_id], [session_id], [timestamp])
+            query.Append($@"INSERT INTO [entity_inventories] ([entity_id], [block_id], [item_id], [type], [action], [amount], [type_id], [subtype_id], [timestamp])
             VALUES");
         }
 
-        public string GetQuery()
+        public override string GetQuery()
         {
             return query.ToString().TrimEnd(',');
         }
 
+        public void Clear()
+        {
+            query.Clear();
+        }
 
-        public void Add(long EntityId, long? BlockId, uint ItemId, MyFixedPoint Amount, float? durability, string TypeId, string SubtypeId)
+
+        public void Add(long EntityId, long? BlockId, uint ItemId, InvType type, InvAction action, MyFixedPoint Amount, string TypeId, string SubtypeId)
         {
             query.Append($@"
-('{EntityId}', '{((BlockId.HasValue) ? BlockId.Value.ToString() : "NULL")}', {ItemId}, {Amount}, {((durability.HasValue) ? durability.Value.ToString() : "NULL")}, '{TypeId}', '{SubtypeId}', {ActivityCollectorPlugin.CurrentSession}, '{Helper.DateTimeFormated}'),");
+('{EntityId}', '{((BlockId.HasValue) ? BlockId.Value.ToString() : "NULL")}', {ItemId}, '{type.ToString()}', '{action.ToString()}', {Amount}, '{TypeId}', '{SubtypeId}', '{Tools.DateTimeFormated}'),");
         }
 
     }

@@ -1,10 +1,12 @@
 ﻿using ActivityCollectorPlugin.Descriptions;
 using Sandbox.Game.Entities;
+using Sandbox.Game.Entities.Character;
 using Sandbox.Game.World;
 using Sandbox.ModAPI;
 using System.Collections.Generic;
 using VRage.Game.Entity;
 using VRage.ModAPI;
+using VRage.Sync;
 
 namespace ActivityCollectorPlugin.Managers
 {
@@ -12,17 +14,19 @@ namespace ActivityCollectorPlugin.Managers
     {
         public bool IsInitialized { get; private set; }
 
-        DefinitionManager definitionManager = new DefinitionManager();
-        CombatManager combatManager = new CombatManager();
+        private DefinitionManager definitionManager = new DefinitionManager();
         PlayerManager playerManager = new PlayerManager();
         FactionManager factionManager = new FactionManager();
-        InventoryManager inventoryManager = new InventoryManager();
-        //ChatManager chatManager = new ChatManager();
-        GridManager gridManager;
+        ChatManager chatManager = new ChatManager();
+        private GridManager gridManager;
+        CombatManager combatManager = new CombatManager();
+
+        private Dictionary<long, InventoryComponent> RegisteredInventories = new Dictionary<long, InventoryComponent>();
+
 
         public EntityManager()
         {
-             gridManager = new GridManager(inventoryManager);
+             gridManager = new GridManager();
         }
 
         private void OnEntityAdd(IMyEntity e)
@@ -36,22 +40,20 @@ namespace ActivityCollectorPlugin.Managers
                 ObjectType = entity.GetType().Name,
                 TypeId = ((entity.DefinitionId.HasValue) ? entity.DefinitionId.Value.TypeId.ToString() : string.Empty),
                 SubtypeId = ((entity.DefinitionId.HasValue) ? entity.DefinitionId.Value.SubtypeId.ToString() : string.Empty),
-                Created = Helper.DateTime
+                Created = Tools.DateTime
             };
+
+            SQLQueryData.WriteToDatabase(description);
 
             if (entity is MyCubeGrid)
             {
                 gridManager.AddGrid(entity as MyCubeGrid);
             }
 
-            if (entity.HasInventory) 
+            if (!RegisteredInventories.ContainsKey(entity.EntityId))
             {
-                //MyInventoryBase inv = entity.GetInventoryBase();
-                //inv.BeforeContentsChanged += inventoryManager.OnBeforeInventoryChanged;
-                //inv.ContentsChanged += inventoryManager.OnInventoryChanged;
+                RegisteredInventories.Add(entity.EntityId, new InventoryComponent(entity));
             }
-
-            ActivityCollectorPlugin.Enqueue(description);
         }
 
         private void OnEntityRemove(IMyEntity e)
@@ -66,14 +68,20 @@ namespace ActivityCollectorPlugin.Managers
                 ObjectType = entity.GetType().Name,
                 TypeId = ((entity.DefinitionId.HasValue) ? entity.DefinitionId.Value.TypeId.ToString() : string.Empty),
                 SubtypeId = ((entity.DefinitionId.HasValue) ? entity.DefinitionId.Value.SubtypeId.ToString() : string.Empty),
-                Removed = Helper.DateTime
+                Removed = Tools.DateTime
             };
 
-            ActivityCollectorPlugin.Enqueue(description);
+            SQLQueryData.WriteToDatabase(description);
 
             if (entity is MyCubeGrid)
             {
                 gridManager.RemoveGrid(entity as MyCubeGrid);
+            }
+
+            if (RegisteredInventories.ContainsKey(entity.EntityId))
+            {
+                RegisteredInventories[entity.EntityId].Close();
+                RegisteredInventories.Remove(entity.EntityId);
             }
         }
 
@@ -95,13 +103,12 @@ namespace ActivityCollectorPlugin.Managers
                 IsInitialized = true;
             }
 
-            //gridManager.Run(); // dont need this
-            //inventoryManager.Run();
+
             definitionManager.Run();
-            factionManager.Run();
-            combatManager.Run();
             playerManager.Run();
-            //chatManager.Run();
+            factionManager.Run();
+            chatManager.Run();
+            combatManager.Run();
         }
     }
 }

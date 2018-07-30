@@ -2,7 +2,7 @@
 
 namespace ActivityCollectorPlugin.Descriptions
 {
-    public class GridDescription : ISQLQueryData
+    public class GridDescription : SQLQueryData
     {
 
         public long GridId { get; set; }
@@ -12,12 +12,12 @@ namespace ActivityCollectorPlugin.Descriptions
         public DateTime Removed { get; set; }
         public DateTime SplitWithParent { get; set; }
 
-        public string GetQuery()
+        public override string GetQuery()
         {
             if (SplitWithParent != DateTime.MinValue)
             {
                 return $@"UPDATE grids
-SET [parent_id] = '{ParentId}', [split_with_parent] = '{Helper.format(SplitWithParent)}'
+SET [parent_id] = '{ParentId}', [split_with_parent] = '{Tools.format(SplitWithParent)}'
 WHERE [id] = '{GridId}' AND [removed] IS NULL;";
 
             }
@@ -25,14 +25,14 @@ WHERE [id] = '{GridId}' AND [removed] IS NULL;";
             {
                 return $@"IF NOT EXISTS (SELECT * FROM grids WHERE [id] = '{GridId}' AND [removed] IS NULL)
 BEGIN
-INSERT INTO grids ([id], [session_id], [type], [created])
-VALUES ('{GridId}', '{ActivityCollectorPlugin.CurrentSession}', '{Type}', '{Helper.format(Created)}')
+INSERT INTO grids ([id], [type], [created])
+VALUES ('{GridId}', '{Type}', '{Tools.format(Created)}')
 END;";
             }
             else
             {
                 return $@"UPDATE grids
-SET [removed] = '{Helper.format(Removed)}'
+SET [removed] = '{Tools.format(Removed)}'
 WHERE [id] = '{GridId}' AND [removed] IS NULL;";
 
             }

@@ -1,22 +1,17 @@
-﻿namespace ActivityCollectorPlugin.Managers
+﻿using Sandbox.Game.Entities;
+using global::ActivityCollectorPlugin.Descriptions;
+using Sandbox.Game.Entities.Cube;
+using System.Collections.Generic;
+using System;
+
+namespace ActivityCollectorPlugin.Managers
 {
-    using Sandbox.Game.Entities;
-    using global::ActivityCollectorPlugin.Descriptions;
-    using Sandbox.Game.Entities.Cube;
-    using System.Collections.Generic;
 
     public class GridManager : IManager
     {
-
         public bool IsInitialized { get; private set; } = true;
 
-        private InventoryManager inventoryManager;
-
-        public GridManager(InventoryManager im)
-        {
-            inventoryManager = im;
-        }
-
+        private Dictionary<long, InventoryComponent> RegisteredBlockInventories = new Dictionary<long, InventoryComponent>();
         private Dictionary<long, float> LastBlockIntegrity = new Dictionary<long, float>();
 
         public void AddGrid(MyCubeGrid grid)
@@ -27,21 +22,22 @@
 
             grid.OnBlockAdded += OnBlockAdded;
             grid.OnBlockRemoved += OnBlockRemoved;
+
             grid.OnBlockIntegrityChanged += OnBlockIntegrityChanged;
             //grid.OnBlockOwnershipChanged += OnOwnershipChanged;
 
-            ActivityCollectorPlugin.Enqueue(new GridDescription()
+            SQLQueryData.WriteToDatabase(new GridDescription()
             {
                 GridId = grid.EntityId,
                 Type = grid.GridSizeEnum.ToString(),
-                Created = Helper.DateTime
+                Created = Tools.DateTime
             });
 
-            ActivityCollectorPlugin.Enqueue(new GridNameDescription()
+            SQLQueryData.WriteToDatabase(new GridNameDescription()
             {
                 GridId = grid.EntityId,
                 Name = grid.DisplayName,
-                Timestamp = Helper.DateTime
+                Timestamp = Tools.DateTime
             });
 
             AddGridBlocks(grid);
@@ -59,10 +55,10 @@
             //grid.OnBlockIntegrityChanged -= OnBlockIntegrityChanged;
             //grid.OnBlockOwnershipChanged -= OnOwnershipChanged;
 
-            ActivityCollectorPlugin.Enqueue(new GridDescription()
+            SQLQueryData.WriteToDatabase(new GridDescription()
             {
                 GridId = grid.EntityId,
-                Removed = Helper.DateTime
+                Removed = Tools.DateTime
             });
 
             foreach (MySlimBlock block in grid.GetBlocks())
@@ -73,21 +69,21 @@
 
         private void OnGridNameChange(MyCubeGrid grid)
         {
-            ActivityCollectorPlugin.Enqueue(new GridNameDescription()
+            SQLQueryData.WriteToDatabase(new GridNameDescription()
             {
                 GridId = grid.EntityId,
                 Name = grid.DisplayName,
-                Timestamp = Helper.DateTime
+                Timestamp = Tools.DateTime
             });
         }
 
         private void OnGridSplit(MyCubeGrid parent, MyCubeGrid child)
         {
-            ActivityCollectorPlugin.Enqueue(new GridDescription()
+            SQLQueryData.WriteToDatabase(new GridDescription()
             {
                 GridId = child.EntityId,
                 ParentId = parent.EntityId,
-                SplitWithParent = Helper.DateTime
+                SplitWithParent = Tools.DateTime
             });
         }
 
@@ -113,17 +109,15 @@
             {
                 MyTerminalBlock tb = slim.FatBlock as MyTerminalBlock;
 
+                if (!RegisteredBlockInventories.ContainsKey(tb.EntityId))
+                {
+                    RegisteredBlockInventories.Add(tb.EntityId, new InventoryComponent(tb));
+                }
+
                 tb.OwnershipChanged += OnBlockOwnershipChanged;
                 blockEntityId = tb.EntityId;
 
                 OnBlockOwnershipChanged(tb);
-
-                if (tb.HasInventory)
-                {
-                    //MyInventoryBase inventory = tb.GetInventoryBase();
-                    //inventory.BeforeContentsChanged += inventoryManager.OnBeforeInventoryChanged;
-                    //inventory.ContentsChanged += inventoryManager.OnInventoryChanged;
-                }
 
                 //    ((MyTerminalBlock)slim.FatBlock).PropertiesChanged += OnBlockPropertyChange;
                 //    ((MyTerminalBlock)slim.FatBlock).SyncPropertyChanged += OnBlockPropertyChange;
@@ -131,7 +125,7 @@
                 //    ((MyTerminalBlock)slim.FatBlock).GetInventoryBase().ContentsChanged += OnBlockInventoryChange;
             }
 
-            ActivityCollectorPlugin.Enqueue(new BlockDescription()
+            SQLQueryData.WriteToDatabase(new BlockDescription()
             {
                 BlockEntityId = blockEntityId,
                 GridId = slim.CubeGrid.EntityId,
@@ -141,22 +135,22 @@
                 X = slim.Position.X,
                 Y = slim.Position.Y,
                 Z = slim.Position.Z,
-                Created = Helper.DateTime
+                Created = Tools.DateTime
             });
         }
 
         private void OnBlockCubeGridChanged(MySlimBlock slim, MyCubeGrid grid)
         {
-            ActivityCollectorPlugin.Enqueue(new BlockDescription()
+            SQLQueryData.WriteToDatabase(new BlockDescription()
             {
                 GridId = grid.EntityId,
                 X = slim.Position.X,
                 Y = slim.Position.Y,
                 Z = slim.Position.Z,
-                Removed = Helper.DateTime
+                Removed = Tools.DateTime
             });
 
-            ActivityCollectorPlugin.Enqueue(new BlockDescription()
+            SQLQueryData.WriteToDatabase(new BlockDescription()
             {
                 GridId = slim.CubeGrid.EntityId,
                 BuiltBy = slim.BuiltBy,
@@ -165,7 +159,7 @@
                 X = slim.Position.X,
                 Y = slim.Position.Y,
                 Z = slim.Position.Z,
-                Created = Helper.DateTime
+                Created = Tools.DateTime
             });
         }
 
@@ -174,16 +168,22 @@
             slim.CubeGridChanged -= OnBlockCubeGridChanged;
             if (slim.FatBlock != null && slim.FatBlock is MyTerminalBlock)
             {
+                if (RegisteredBlockInventories.ContainsKey(slim.FatBlock.EntityId))
+                {
+                    RegisteredBlockInventories[slim.FatBlock.EntityId].Close();
+                    RegisteredBlockInventories.Remove(slim.FatBlock.EntityId);
+                }
+
                 //((MyTerminalBlock)slim.FatBlock).PropertiesChanged -= OnBlockPropertyChange;
             }
 
-            ActivityCollectorPlugin.Enqueue(new BlockDescription()
+            SQLQueryData.WriteToDatabase(new BlockDescription()
             {
                 GridId = slim.CubeGrid.EntityId,
                 X = slim.Position.X,
                 Y = slim.Position.Y,
                 Z = slim.Position.Z,
-                Removed = Helper.DateTime
+                Removed = Tools.DateTime
             });
         }
 
@@ -197,14 +197,14 @@
             float integrityDelta = LastBlockIntegrity[slim.UniqueId] - slim.Integrity;
             if (integrityDelta < 0)
             {
-                ActivityCollectorPlugin.Enqueue(new CombatDescription()
+                SQLQueryData.WriteToDatabase(new CombatDescription()
                 {
-                    VictimGridBlockId = Helper.getBlockId(slim.Position),
+                    VictimGridBlockId = Tools.getBlockId(slim.Position),
                     VictimGridId = slim.CubeGrid.EntityId,
                     Type = "Repair",
                     Damage = integrityDelta,
                     Integrity = slim.Integrity,
-                    Timestamp = Helper.DateTime
+                    Timestamp = Tools.DateTime
                 });
             }
 
@@ -213,11 +213,12 @@
 
         private void OnBlockOwnershipChanged(MyTerminalBlock block)
         {
-            ActivityCollectorPlugin.Enqueue(new BlockOwnershipDescription() {
+            SQLQueryData.WriteToDatabase(new BlockOwnershipDescription()
+            {
                 GridId = block.CubeGrid.EntityId,
                 BlockEntityId = block.EntityId,
                 Owner = block.OwnerId,
-                Timestamp = Helper.DateTime
+                Timestamp = Tools.DateTime
             });
         }
 
@@ -257,8 +258,6 @@
 
         //    ActivityCollectorPlugin.log.Info((s as Sync<object, SyncDirection.FromServer>).ToString());
         //}
-
-
 
         public void Run()
         {

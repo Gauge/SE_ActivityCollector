@@ -8,7 +8,7 @@ using VRageMath;
 
 namespace ActivityCollectorPlugin
 {
-    public class Helper
+    public class Tools
     {
         public static ulong GetPlayerSteamId(IMyCharacter character)
         {

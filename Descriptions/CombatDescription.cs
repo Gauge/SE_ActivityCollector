@@ -2,11 +2,10 @@
 
 namespace ActivityCollectorPlugin.Descriptions
 {
-    public class CombatDescription : ISQLQueryData
+    public class CombatDescription : SQLQueryData
     {
-        public int SessionId { get; set; }
         public long AttackerGridId { get; set; }
-        public string AttackerGridBlockId { get; set; } 
+        public string AttackerGridBlockId { get; set; }
         public long AttackerEntityId { get; set; }
 
         public long VictimGridId { get; set; }
@@ -18,16 +17,15 @@ namespace ActivityCollectorPlugin.Descriptions
         public float Integrity { get; set; }
         public DateTime Timestamp { get; set; }
 
-        public string GetQuery()
+        public override string GetQuery()
         {
             return $@"
 INSERT INTO [dbo].[combatlog] (
-    [session_id], 
     [attacker_grid_id], [attacker_grid_block_id], [attacker_entity_id],
     [victim_grid_id], [victim_grid_block_id], [victim_entity_id],
     [type], [damage], [integrity], [timestamp]
 )
-VALUES ('{ActivityCollectorPlugin.CurrentSession}', '{AttackerGridId}', '{AttackerGridBlockId}', '{AttackerEntityId}', '{VictimGridId}', '{VictimGridBlockId}', '{VictimEntityId}', '{Type}', '{Helper.round(Damage)}', '{Helper.round(Integrity)}', '{Helper.format(Timestamp)}');";
+VALUES ('{AttackerGridId}', '{AttackerGridBlockId}', '{AttackerEntityId}', '{VictimGridId}', '{VictimGridBlockId}', '{VictimEntityId}', '{Type}', '{Tools.round(Damage)}', '{Tools.round(Integrity)}', '{Tools.format(Timestamp)}');";
         }
     }
 }

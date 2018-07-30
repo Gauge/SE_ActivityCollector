@@ -1,6 +1,7 @@
 ﻿using ActivityCollectorPlugin.Descriptions;
 using Sandbox.Game.Entities;
 using Sandbox.Game.Entities.Character;
+using Sandbox.Game.Multiplayer;
 using Sandbox.Game.World;
 using Sandbox.ModAPI;
 using VRage.Game.ModAPI;
@@ -18,10 +19,12 @@ namespace ActivityCollectorPlugin.Managers
             if (!IsInitialized)
             {
                 session = (MySession)MyAPIGateway.Session;
-                session.Players.NewPlayerRequestSucceeded += OnNewPlayerSuccess;
-                session.Players.NewPlayerRequestFailed += OnNewPlayerFailed;
-                session.Players.PlayerRemoved += OnPlayerRemoved;
+                //session.Players.NewPlayerRequestSucceeded += OnNewPlayerSuccess;
+                //session.Players.NewPlayerRequestFailed += OnNewPlayerFailed;
+                //session.Players.PlayerRemoved += OnPlayerRemoved;
+                //Sync.Players.PlayersChanged += OnPlayersChanged;
                 session.Players.PlayersChanged += OnPlayersChanged;
+                //Sync.Players.IdentitiesChanged += OnIdentitiesChanged;
                 session.Players.IdentitiesChanged += OnIdentitiesChanged;
                 //session.Players.PlayerCharacterDied += OnPlayerCharacterDied;
                 IsInitialized = true;
@@ -30,58 +33,43 @@ namespace ActivityCollectorPlugin.Managers
 
         private void OnIdentitiesChanged()
         {
-            ActivityCollectorPlugin.log.Info("Identities have changed!");
+            ActivityCollector.Log.Info("Identities have changed!");
         }
 
         private void OnPlayersChanged(bool connected, MyPlayer.PlayerId pid)
         {
             MyIdentity identity = session.Players.TryGetPlayerIdentity(pid);
 
-            ActivityCollectorPlugin.log.Info($"{identity.DisplayName} has {((connected) ? "Connected" : "Disconnected")}");
+            ActivityCollector.Log.Info($"{identity.DisplayName} has {((connected) ? "Connected" : "Disconnected")}");
             if (connected)
             {
                 MyPlayer p;
                 session.Players.TryGetPlayerById(pid, out p);
                 p.Controller.ControlledEntityChanged += OnControlledEntityChanged;
 
-                ActivityCollectorPlugin.Enqueue(new UserDescription()
+                SQLQueryData.WriteToDatabase(new UserDescription()
                 {
                     SteamId = pid.SteamId,
                     PlayerId = identity.IdentityId,
                     Name = identity.DisplayName,
-                    Connected = Helper.DateTime,
+                    Connected = Tools.DateTime,
                     State = LoginState.Active
                 });
             }
             else
             {
-                ActivityCollectorPlugin.Enqueue(new UserDescription()
+                SQLQueryData.WriteToDatabase(new UserDescription()
                 {
                     SteamId = pid.SteamId,
                     PlayerId = identity.IdentityId,
                     Name = identity.DisplayName,
-                    Disconnected = Helper.DateTime,
+                    Disconnected = Tools.DateTime,
                     State = LoginState.Disconnected
                 });
             }
         }
 
-        private void OnNewPlayerSuccess(MyPlayer.PlayerId pid)
-        {
-            ActivityCollectorPlugin.log.Info($"{pid.SteamId} New Player Success");
-        }
-
-        private void OnPlayerRemoved(MyPlayer.PlayerId pid)
-        {
-            ActivityCollectorPlugin.log.Info($"{pid.SteamId} Has been removed");
-        }
-
-        private void OnNewPlayerFailed(int something)
-        {
-            ActivityCollectorPlugin.log.Info($"{something} New Player");
-        }
-
-        public void OnControlledEntityChanged(Sandbox.Game.Entities.IMyControllableEntity oldEntity, Sandbox.Game.Entities.IMyControllableEntity newEntity)
+        public void OnControlledEntityChanged(IMyControllableEntity oldEntity, IMyControllableEntity newEntity)
         {
             if (newEntity == null)
             {
@@ -96,61 +84,56 @@ namespace ActivityCollectorPlugin.Managers
                 }
                 else
                 {
-                    ActivityCollectorPlugin.log.Warn($"Unrecognized controlled object on player control release {oldEntity.Entity.GetType()}");
+                    ActivityCollector.Log.Warn($"Unrecognized controlled object on player control release {oldEntity.Entity.GetType()}");
                     return;
                 }
 
-                ActivityCollectorPlugin.Enqueue(new SpawnDescription()
+                SQLQueryData.WriteToDatabase(new UserSpawnDescription()
                 {
                     CharacterId = entityId,
-                    SessionId = ActivityCollectorPlugin.CurrentSession,
-                    EndTime = Helper.DateTime
+                    EndTime = Tools.DateTime
                 });
             }
             else if (oldEntity == null)
             {
                 if (newEntity.Entity is MyCharacter)
                 {
-                    ActivityCollectorPlugin.Enqueue(new SpawnDescription()
+                    SQLQueryData.WriteToDatabase(new UserSpawnDescription()
                     {
-                        PlayerId = Helper.GetPlayerIdentityId(newEntity.Entity as MyCharacter),
+                        PlayerId = Tools.GetPlayerIdentityId(newEntity.Entity as MyCharacter),
                         CharacterId = newEntity.Entity.EntityId,
-                        SessionId = ActivityCollectorPlugin.CurrentSession,
-                        SteamId = Helper.GetPlayerSteamId(newEntity.Entity as MyCharacter),
-                        StartTime = Helper.DateTime
+                        SteamId = Tools.GetPlayerSteamId(newEntity.Entity as MyCharacter),
+                        StartTime = Tools.DateTime
                     });
                 }
                 else if (newEntity.Entity is MyShipController)
                 {
                     IMyCharacter character = (newEntity.Entity as IMyShipController).LastPilot;
-                    ActivityCollectorPlugin.Enqueue(new SpawnDescription()
+                    SQLQueryData.WriteToDatabase(new UserSpawnDescription()
                     {
-                        PlayerId = Helper.GetPlayerIdentityId(character),
+                        PlayerId = Tools.GetPlayerIdentityId(character),
                         CharacterId = character.EntityId,
-                        SessionId = ActivityCollectorPlugin.CurrentSession,
-                        SteamId = Helper.GetPlayerSteamId(character),
-                        StartTime = Helper.DateTime
+                        SteamId = Tools.GetPlayerSteamId(character),
+                        StartTime = Tools.DateTime
                     });
                 }
             }
             else if (newEntity.Entity is MyCharacter && oldEntity.Entity is IMyShipController)
             {
-                ActivityCollectorPlugin.Enqueue(new PilotControlChangedDescription()
+                SQLQueryData.WriteToDatabase(new UserPilotControlChangedDescription()
                 {
-                    PlayerId = Helper.GetPlayerIdentityId(newEntity.Entity as MyCharacter),
+                    PlayerId = Tools.GetPlayerIdentityId(newEntity.Entity as MyCharacter),
                     GridId = (oldEntity.Entity as IMyShipController).CubeGrid.EntityId,
-                    SessionId = ActivityCollectorPlugin.CurrentSession,
-                    EndTime = Helper.DateTime
+                    EndTime = Tools.DateTime
                 });
             }
             else if (oldEntity.Entity is MyCharacter && newEntity.Entity is IMyShipController)
             {
-                ActivityCollectorPlugin.Enqueue(new PilotControlChangedDescription()
+                SQLQueryData.WriteToDatabase(new UserPilotControlChangedDescription()
                 {
-                    PlayerId = Helper.GetPlayerIdentityId(oldEntity.Entity as MyCharacter),
+                    PlayerId = Tools.GetPlayerIdentityId(oldEntity.Entity as MyCharacter),
                     GridId = (newEntity.Entity as IMyShipController).CubeGrid.EntityId,
-                    SessionId = ActivityCollectorPlugin.CurrentSession,
-                    StartTime = Helper.DateTime
+                    StartTime = Tools.DateTime
                 });
             }
         }

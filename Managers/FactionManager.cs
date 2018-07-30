@@ -1,6 +1,5 @@
 ﻿using ActivityCollectorPlugin.Descriptions;
 using Sandbox.ModAPI;
-using System;
 using VRage.Game.ModAPI;
 
 namespace ActivityCollectorPlugin.Managers
@@ -13,7 +12,7 @@ namespace ActivityCollectorPlugin.Managers
         {
             if (!IsInitialized)
             {
-                ActivityCollectorPlugin.log.Info($"Initializing Faction Manager");
+                ActivityCollector.Log.Info($"Initializing Faction Manager");
                 MyAPIGateway.Session.Factions.FactionCreated += OnFactionCreated;
                 MyAPIGateway.Session.Factions.FactionEdited += OnFactionEdited;
                 MyAPIGateway.Session.Factions.FactionStateChanged += OnFactionStateChanged;
@@ -27,15 +26,25 @@ namespace ActivityCollectorPlugin.Managers
 
             if (faction != null)
             {
-                ActivityCollectorPlugin.log.Info($"New Faction Created: {faction.Tag} | {faction.Name}");
-                ActivityCollectorPlugin.Enqueue(new FactionDescription()
+                ActivityCollector.Log.Info($"New Faction Created: {faction.Tag} | {faction.Name}");
+
+                SQLQueryData.WriteToDatabase(new FactionActivityDescription()
+                {
+                    FromFactionId = id,
+                    ToFactionId = id,
+                    PlayerId = faction.FounderId,
+                    SenderId = faction.FounderId,
+                    Action = "CreateFaction",
+                    Timestamp = Tools.DateTime
+                });
+
+                SQLQueryData.WriteToDatabase(new FactionNameDescription()
                 {
                     FactionId = id,
                     Tag = faction.Tag,
                     Name = faction.Name,
                     Description = faction.Description,
-                    CreationDate = Helper.DateTime,
-                    State = FactionState.Create
+                    Timestamp = Tools.DateTime
                 });
             }
         }
@@ -46,47 +55,29 @@ namespace ActivityCollectorPlugin.Managers
 
             if (faction != null)
             {
-                ActivityCollectorPlugin.log.Info($"Faction Edited: {faction.Tag} | {faction.Name}");
-                ActivityCollectorPlugin.Enqueue(new FactionDescription()
+                ActivityCollector.Log.Info($"Faction Edited: {faction.Tag} | {faction.Name}");
+                SQLQueryData.WriteToDatabase(new FactionNameDescription()
                 {
                     FactionId = id,
                     Tag = faction.Tag,
                     Name = faction.Name,
                     Description = faction.Description,
-                    State = FactionState.Edit
+                    Timestamp = Tools.DateTime
                 });
             }
         }
 
         private void OnFactionStateChanged(MyFactionStateChange action, long fromFaction, long toFaction, long playerId, long senderId)
         {
-            ActivityCollectorPlugin.Enqueue(new FactionActivityDescription()
+            SQLQueryData.WriteToDatabase(new FactionActivityDescription()
             {
-                Action = action,
-                FromFaction = MyAPIGateway.Session.Factions.TryGetFactionById(fromFaction),
-                ToFaction = MyAPIGateway.Session.Factions.TryGetFactionById(toFaction),
+                Action = action.ToString(),
                 FromFactionId = fromFaction,
                 ToFactionId = toFaction,
                 PlayerId = playerId,
                 SenderId = senderId,
-                Timestamp = Helper.DateTime
+                Timestamp = Tools.DateTime
             });
-
-            if (action == MyFactionStateChange.RemoveFaction)
-            {
-                IMyFaction faction = MyAPIGateway.Session.Factions.TryGetFactionById(fromFaction);
-
-                if (faction != null)
-                {
-                    ActivityCollectorPlugin.log.Info($"Faction Removed: {faction.Tag} | {faction.Name}");
-                    ActivityCollectorPlugin.Enqueue(new FactionDescription()
-                    {
-                        FactionId = fromFaction,
-                        TerminationDate = Helper.DateTime,
-                        State = FactionState.Remove
-                    });
-                }
-            }
         }
     }
 }

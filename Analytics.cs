@@ -9,7 +9,7 @@ namespace ActivityCollectorPlugin
 
         public static void Start(string name)
         {
-            if (ActivityCollectorPlugin.DebugMode)
+            if (ActivityCollector.Config.Data.DebugMode)
             {
                 if (!timers.ContainsKey(name))
                 {
@@ -21,10 +21,10 @@ namespace ActivityCollectorPlugin
 
         public static void Stop(string name)
         {
-            if (timers.ContainsKey(name) && ActivityCollectorPlugin.DebugMode)
+            if (ActivityCollector.Config.Data.DebugMode && timers.ContainsKey(name))
             {
                 timers[name].Stop();
-                ActivityCollectorPlugin.log.Info($"[{name}] {(timers[name].ElapsedTicks * 1000d) / Stopwatch.Frequency}ms");
+                ActivityCollector.Log.Info($"[{name}] {(timers[name].ElapsedTicks * 1000d) / Stopwatch.Frequency}ms");
             }
         }
     }

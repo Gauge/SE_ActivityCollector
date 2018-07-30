@@ -21,7 +21,7 @@ namespace ActivityCollectorPlugin.Managers
         {
             if (!IsInitialized)
             {
-                ActivityCollectorPlugin.log.Info($"Initializing Combat Manager");
+                ActivityCollector.Log.Info($"Initializing Combat Manager");
                 MyAPIGateway.Session.DamageSystem.RegisterAfterDamageHandler(0, CombatDamageHandler);
                 MyAPIGateway.Session.DamageSystem.RegisterDestroyHandler(0, CauseKeenHacks);
                 MyAPIGateway.Entities.OnEntityAdd += OnEntityAdd;
@@ -39,7 +39,7 @@ namespace ActivityCollectorPlugin.Managers
                 Vector3D from = entity.WorldMatrix.Translation + entity.WorldMatrix.Backward;
                 Vector3D to = entity.WorldMatrix.Translation + entity.WorldMatrix.Backward * 50;
 
-                IMyEntity rayEntity = Helper.RaycastEntity(from, to);
+                IMyEntity rayEntity = Tools.RaycastEntity(from, to);
 
                 if (rayEntity != null)
                 {
@@ -58,8 +58,7 @@ namespace ActivityCollectorPlugin.Managers
             {
                 Damage = info.Amount,
                 Type = info.Type.String,
-                SessionId = ActivityCollectorPlugin.CurrentSession,
-                Timestamp = Helper.DateTime
+                Timestamp = Tools.DateTime
             };
 
             if (target is IMySlimBlock)
@@ -67,7 +66,7 @@ namespace ActivityCollectorPlugin.Managers
                 IMySlimBlock slim = target as IMySlimBlock;
                 log.Integrity = slim.Integrity;
                 log.VictimGridId = slim.CubeGrid.EntityId;
-                log.VictimGridBlockId = Helper.getBlockId(slim.Position);
+                log.VictimGridBlockId = Tools.getBlockId(slim.Position);
             }
             else if (target is IMyCharacter)
             {
@@ -91,7 +90,7 @@ namespace ActivityCollectorPlugin.Managers
             }
             else
             {
-                ActivityCollectorPlugin.log.Error($"Unrecognised Victim {target.GetType()}");
+                ActivityCollector.Log.Error($"Unrecognised Victim {target.GetType()}");
             }
 
 
@@ -135,17 +134,17 @@ namespace ActivityCollectorPlugin.Managers
                                     IMyCubeBlock cube = missileEntity as IMyCubeBlock;
 
                                     log.AttackerGridId = cube.CubeGrid.EntityId;
-                                    log.AttackerGridBlockId = Helper.getBlockId(cube.Position);
+                                    log.AttackerGridBlockId = Tools.getBlockId(cube.Position);
                                 }
                             }
                             else
                             {
-                                ActivityCollectorPlugin.log.Error($"missiles parent grid was not found!");
+                                ActivityCollector.Log.Error($"missiles parent grid was not found!");
                             }
                         }
                         else
                         {
-                            ActivityCollectorPlugin.log.Error($"Entity of type {entity.GetType()} failed to parse id {entity.Name}");
+                            ActivityCollector.Log.Error($"Entity of type {entity.GetType()} failed to parse id {entity.Name}");
                         }
                     }
                     else
@@ -155,7 +154,7 @@ namespace ActivityCollectorPlugin.Managers
                 }
                 catch (Exception e)
                 {
-                    ActivityCollectorPlugin.log.Error(e);
+                    ActivityCollector.Log.Error(e);
                 }
             }
             else if (entity is IMyGunBaseUser) // player tools
@@ -219,20 +218,20 @@ namespace ActivityCollectorPlugin.Managers
                     }
                     else
                     {
-                        ActivityCollectorPlugin.log.Error($"Missles parent grid was not found!");
+                        ActivityCollector.Log.Error($"Missles parent grid was not found!");
                     }
                 }
                 else
                 {
-                    ActivityCollectorPlugin.log.Error($"Entity of type {entity.GetType()} failed to parse id {entity.Name}");
+                    ActivityCollector.Log.Error($"Entity of type {entity.GetType()} failed to parse id {entity.Name}");
                 }
             }
             else
             {
-                ActivityCollectorPlugin.log.Error($"Unknown attacker entity of type: {entity.GetType()}");
+                ActivityCollector.Log.Error($"Unknown attacker entity of type: {entity.GetType()}");
             }
 
-            ActivityCollectorPlugin.Enqueue(log);
+            SQLQueryData.WriteToDatabase(log);
         }
 
         private void CauseKeenHacks(object target, MyDamageInformation info)

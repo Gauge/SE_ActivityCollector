@@ -121,34 +121,34 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ActivityCollectorPlugin.cs" />
-    <Compile Include="ActivityCollectorConfig.cs" />
+    <Compile Include="ActivityCollector.cs" />
+    <Compile Include="Managers\InventoryComponent.cs" />
+    <Compile Include="Settings.cs" />
     <Compile Include="Analytics.cs" />
     <Compile Include="Descriptions\BlockDefinitionDescription.cs" />
     <Compile Include="Descriptions\BlockDescription.cs" />
     <Compile Include="Descriptions\BlockOwnershipDescription.cs" />
     <Compile Include="Descriptions\CombatDescription.cs" />
-    <Compile Include="Descriptions\ComponentDefinitionDescription.cs" />
+    <Compile Include="Descriptions\BlockComponentDefinitionDescription.cs" />
     <Compile Include="Descriptions\EntityDefinition.cs" />
     <Compile Include="Descriptions\FactionActivityDescription.cs" />
-    <Compile Include="Descriptions\FactionDescription.cs" />
+    <Compile Include="Descriptions\FactionNameDescription.cs" />
     <Compile Include="Descriptions\GridDescription.cs" />
     <Compile Include="Descriptions\GridNameDescription.cs" />
     <Compile Include="Descriptions\InventoryDescription.cs" />
-    <Compile Include="Helper.cs" />
+    <Compile Include="Tools.cs" />
     <Compile Include="Managers\ChatManager.cs" />
     <Compile Include="Managers\CombatManager.cs" />
     <Compile Include="Managers\DefinitionManager.cs" />
     <Compile Include="Managers\FactionManager.cs" />
     <Compile Include="Managers\GridManager.cs" />
     <Compile Include="Managers\IManager.cs" />
-    <Compile Include="Managers\InventoryManager.cs" />
     <Compile Include="Managers\PlayerManager.cs" />
-    <Compile Include="Descriptions\SpawnDescription.cs" />
-    <Compile Include="Descriptions\PilotControlChangedDescription.cs" />
+    <Compile Include="Descriptions\UserSpawnDescription.cs" />
+    <Compile Include="Descriptions\UserPilotControlChangedDescription.cs" />
     <Compile Include="Managers\EntityManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Descriptions\ISQLQueryData.cs" />
+    <Compile Include="Descriptions\SQLQueryData.cs" />
     <Compile Include="Descriptions\UserDescription.cs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Compile>
@@ -163,6 +163,6 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy .\ActivityCollectorPlugin.dll F:\workspace\SpaceEngineers\torch-server\Plugins\ac\</PostBuildEvent>
+    <PostBuildEvent>copy .\ActivityCollectorPlugin.dll F:\workspace\torch-server\Plugins\ac\</PostBuildEvent>
   </PropertyGroup>
 </Project>
