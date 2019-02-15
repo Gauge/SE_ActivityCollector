@@ -91,24 +91,65 @@ namespace ActivityCollectorPlugin
             return date.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture);
         }
 
-        public static string getBlockId(int x, int y, int z)
+        //public static string getBlockId(int x, int y, int z)
+        //{
+        //    return $"{x}|{y}|{z}";
+        //}
+
+        public static string GetBlockId(Vector3I pos)
         {
-            return $"{x}|{y}|{z}";
+            return format(pos);
         }
 
-        public static string getBlockId(Vector3I pos)
-        {
-            return getBlockId(pos.X, pos.Y, pos.Z);
-        }
-
-        public static string prepString(string data)
+        public static string PrepString(string data)
         {
             return data.Replace("'", "''");
         }
 
-        public static float round(float value)
+        //public static float Round(float value)
+        //{
+        //    return (float)Math.Round(value, 3);
+        //}
+
+        public static double Round(double value)
         {
-            return (float)(Math.Round((double)value, 3));
+            return Math.Round(value, 4);
         }
+
+        public static Vector3 Round(Vector3 v)
+        {
+            return new Vector3(Round(v.X), Round(v.Y), Round(v.Z));
+        }
+
+        public static Vector3D Round(Vector3D v)
+        {
+            return new Vector3D(Round(v.X), Round(v.Y), Round(v.Z));
+        }
+
+        public static string format(Vector3 v)
+        {
+            return format(v.X, v.Y, v.Z);
+        }
+
+        //public static string formatNoRounding(Vector3 v)
+        //{
+        //    return $"{v.X}:{v.Y}:{v.Z}";
+        //}
+
+        public static string format(Vector3D v)
+        {
+            return format(v.X, v.Y, v.Z);
+        }
+
+        public static string format(Vector3I v)
+        {
+            return format(v.X, v.Y, v.Z);//$"{v.X}:{v.Y}:{v.Z}";
+        }
+
+        public static string format(double x, double y, double z)
+        {
+            return $"{Round(x)}:{Round(y)}:{Round(z)}"; //$"{x}:{y}:{z}"; 
+        }
+
     }
 }

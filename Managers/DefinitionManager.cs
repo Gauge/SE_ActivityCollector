@@ -10,18 +10,19 @@ namespace ActivityCollectorPlugin.Managers
 
         public void Run()
         {
-            if (!IsInitialized)
-            {
-                IsInitialized = true;
-                MyAPIGateway.Session.OnSessionReady += SessionReady;
-            }
+            //if (!IsInitialized)
+            //{
+            //    IsInitialized = true;
+            //    MyAPIGateway.Session.OnSessionReady += SessionReady;
+            //}
         }
 
-        private void SessionReady()
+        public void SessionReady()
         {
             MyAPIGateway.Session.OnSessionReady -= SessionReady;
 
-            Analytics.Start("ComponentDefinitions");
+            ActivityCollector.Log.Info($"Writing Definititions");
+
             foreach (MyComponentDefinition c in MyDefinitionManager.Static.GetDefinitionsOfType<MyComponentDefinition>())
             {
                 SQLQueryData.WriteToDatabase(new BlockComponentDefinitionDescription()
@@ -37,9 +38,7 @@ namespace ActivityCollectorPlugin.Managers
                     Description = c.DescriptionText,
                 });
             }
-            Analytics.Stop("ComponentDefinitions");
 
-            Analytics.Start("CubeBlockDefinitions");
             foreach (MyCubeBlockDefinition cube in MyDefinitionManager.Static.GetDefinitionsOfType<MyCubeBlockDefinition>())
             {
                 SQLQueryData.WriteToDatabase(new BlockDefinitionDescription()
@@ -56,7 +55,7 @@ namespace ActivityCollectorPlugin.Managers
                     UsesDeformation = cube.UsesDeformation,
                     Mass = cube.Mass,
                     PCU = cube.PCU,
-                    IsAirTight = cube.IsAirTight,
+                    IsAirTight = (cube.IsAirTight.HasValue ? cube.IsAirTight.Value : false),
                     SizeX = cube.Size.X,
                     SizeY = cube.Size.Y,
                     SizeZ = cube.Size.Z,
@@ -67,7 +66,6 @@ namespace ActivityCollectorPlugin.Managers
                     Description = cube.DescriptionText
                 });
             }
-            Analytics.Stop("CubeBlockDefinitions");
         }
     }
 }

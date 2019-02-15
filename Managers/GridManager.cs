@@ -118,11 +118,6 @@ namespace ActivityCollectorPlugin.Managers
                 blockEntityId = tb.EntityId;
 
                 OnBlockOwnershipChanged(tb);
-
-                //    ((MyTerminalBlock)slim.FatBlock).PropertiesChanged += OnBlockPropertyChange;
-                //    ((MyTerminalBlock)slim.FatBlock).SyncPropertyChanged += OnBlockPropertyChange;
-                //    ((MyTerminalBlock)slim.FatBlock).
-                //    ((MyTerminalBlock)slim.FatBlock).GetInventoryBase().ContentsChanged += OnBlockInventoryChange;
             }
 
             SQLQueryData.WriteToDatabase(new BlockDescription()
@@ -173,8 +168,6 @@ namespace ActivityCollectorPlugin.Managers
                     RegisteredBlockInventories[slim.FatBlock.EntityId].Close();
                     RegisteredBlockInventories.Remove(slim.FatBlock.EntityId);
                 }
-
-                //((MyTerminalBlock)slim.FatBlock).PropertiesChanged -= OnBlockPropertyChange;
             }
 
             SQLQueryData.WriteToDatabase(new BlockDescription()
@@ -199,7 +192,7 @@ namespace ActivityCollectorPlugin.Managers
             {
                 SQLQueryData.WriteToDatabase(new CombatDescription()
                 {
-                    VictimGridBlockId = Tools.getBlockId(slim.Position),
+                    VictimGridBlockId = Tools.GetBlockId(slim.Position),
                     VictimGridId = slim.CubeGrid.EntityId,
                     Type = "Repair",
                     Damage = integrityDelta,
@@ -221,43 +214,6 @@ namespace ActivityCollectorPlugin.Managers
                 Timestamp = Tools.DateTime
             });
         }
-
-        //private void OnBlockPropertyChange(MyTerminalBlock block)
-        //{
-        //    List<ITerminalProperty> props = new List<ITerminalProperty>();
-        //    block.GetProperties(props);
-
-        //    StringBuilder b = new StringBuilder();
-        //    foreach (ITerminalProperty prop in props)
-        //    {
-        //        b.Append($"[{prop.Id}] {prop.TypeName}");
-
-        //        if (prop.TypeName == typeof(bool).Name)
-        //        {
-        //            b.Append($" {prop.AsBool().GetValue(block)}\n");
-        //        }
-        //        else if (prop.TypeName == typeof(Color).Name)
-        //        {
-        //            b.Append($" {prop.AsColor().GetValue(block)}\n");
-        //        }
-        //        else if (prop.TypeName == typeof(float).Name)
-        //        {
-        //            b.Append($" {prop.AsFloat().GetValue(block)}\n");
-        //        }
-        //        else if (prop.TypeName == typeof(StringBuilder).Name)
-        //        {
-        //            b.Append($" {prop.As<StringBuilder>().GetValue(block)}\n");
-        //        }
-        //    }
-        //    ActivityCollectorPlugin.log.Info(b.ToString());
-        //}
-
-        //private void OnBlockPropertyChange(SyncBase s)
-        //{
-        //    ActivityCollectorPlugin.log.Info($"[{s.Id}] {s.ValueType} {s as Sync<object, SyncDirection.BothWays> == null} {s as Sync<object, SyncDirection.FromServer> == null}");
-
-        //    ActivityCollectorPlugin.log.Info((s as Sync<object, SyncDirection.FromServer>).ToString());
-        //}
 
         public void Run()
         {

@@ -25,7 +25,7 @@ INSERT INTO [dbo].[combatlog] (
     [victim_grid_id], [victim_grid_block_id], [victim_entity_id],
     [type], [damage], [integrity], [timestamp]
 )
-VALUES ('{AttackerGridId}', '{AttackerGridBlockId}', '{AttackerEntityId}', '{VictimGridId}', '{VictimGridBlockId}', '{VictimEntityId}', '{Type}', '{Tools.round(Damage)}', '{Tools.round(Integrity)}', '{Tools.format(Timestamp)}');";
+VALUES ('{AttackerGridId}', '{AttackerGridBlockId}', '{AttackerEntityId}', '{VictimGridId}', '{VictimGridBlockId}', '{VictimEntityId}', '{Type}', '{Tools.Round(Damage)}', '{Tools.Round(Integrity)}', '{Tools.format(Timestamp)}');";
         }
     }
 }

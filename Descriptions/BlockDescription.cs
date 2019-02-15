@@ -4,7 +4,6 @@ namespace ActivityCollectorPlugin.Descriptions
 {
     public class BlockDescription : SQLQueryData
     {
-        public string BlockId { get { return $"{X}|{Y}|{Z}"; } }
         public long BlockEntityId { get; set; }
         public long GridId { get; set; }
         public long BuiltBy { get; set; }
@@ -23,14 +22,14 @@ namespace ActivityCollectorPlugin.Descriptions
             {
                 return $@"UPDATE grid_blocks
 SET [removed] = '{Tools.format(Removed)}'
-WHERE [id] = '{BlockId}' AND [grid_id] = '{GridId}' AND [removed] IS NULL";
+WHERE [grid_id] = '{GridId}' AND [x] = '{X}' AND [y] = '{Y}' AND [z] = '{Z}' AND [removed] IS NULL";
             }
             else
             {
-                return $@"IF NOT EXISTS (SELECT [id] FROM grid_blocks WHERE [id] = '{BlockId}' AND [grid_id] = '{GridId}' AND [removed] IS NULL)
+                return $@"IF NOT EXISTS (SELECT [grid_id] FROM grid_blocks WHERE [grid_id] = '{GridId}' AND [x] = '{X}' AND [y] = '{Y}' AND [z] = '{Z}' AND [removed] IS NULL)
 BEGIN
-INSERT INTO grid_blocks ([id], [entity_id], [grid_id], [built_by], [type_id], [subtype_id], [x], [y], [z], [created])
-VALUES ('{BlockId}', '{((BlockEntityId == 0) ? "null" : BlockEntityId.ToString())}', '{GridId}', '{BuiltBy}', '{TypeId}', '{SubTypeId}', '{X}', '{Y}', '{Z}', '{Tools.format(Created)}')
+INSERT INTO grid_blocks ([entity_id], [grid_id], [built_by], [type_id], [subtype_id], [x], [y], [z], [created])
+VALUES ('{((BlockEntityId == 0) ? "null" : BlockEntityId.ToString())}', '{GridId}', '{BuiltBy}', '{TypeId}', '{SubTypeId}', '{X}', '{Y}', '{Z}', '{Tools.format(Created)}')
 END;";
             }
         }

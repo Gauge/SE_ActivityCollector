@@ -122,7 +122,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ActivityCollector.cs" />
+    <Compile Include="Descriptions\MovementDescription.cs" />
     <Compile Include="Managers\InventoryComponent.cs" />
+    <Compile Include="Managers\MovementManager.cs" />
     <Compile Include="Settings.cs" />
     <Compile Include="Analytics.cs" />
     <Compile Include="Descriptions\BlockDefinitionDescription.cs" />

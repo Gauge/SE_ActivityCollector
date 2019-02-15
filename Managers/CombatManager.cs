@@ -66,7 +66,7 @@ namespace ActivityCollectorPlugin.Managers
                 IMySlimBlock slim = target as IMySlimBlock;
                 log.Integrity = slim.Integrity;
                 log.VictimGridId = slim.CubeGrid.EntityId;
-                log.VictimGridBlockId = Tools.getBlockId(slim.Position);
+                log.VictimGridBlockId = Tools.GetBlockId(slim.Position);
             }
             else if (target is IMyCharacter)
             {
@@ -134,7 +134,7 @@ namespace ActivityCollectorPlugin.Managers
                                     IMyCubeBlock cube = missileEntity as IMyCubeBlock;
 
                                     log.AttackerGridId = cube.CubeGrid.EntityId;
-                                    log.AttackerGridBlockId = Tools.getBlockId(cube.Position);
+                                    log.AttackerGridBlockId = Tools.GetBlockId(cube.Position);
                                 }
                             }
                             else

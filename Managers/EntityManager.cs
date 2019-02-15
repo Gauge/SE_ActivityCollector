@@ -1,12 +1,10 @@
 ﻿using ActivityCollectorPlugin.Descriptions;
 using Sandbox.Game.Entities;
-using Sandbox.Game.Entities.Character;
 using Sandbox.Game.World;
 using Sandbox.ModAPI;
 using System.Collections.Generic;
 using VRage.Game.Entity;
 using VRage.ModAPI;
-using VRage.Sync;
 
 namespace ActivityCollectorPlugin.Managers
 {
@@ -14,19 +12,20 @@ namespace ActivityCollectorPlugin.Managers
     {
         public bool IsInitialized { get; private set; }
 
+        private Settings conf;
+
         private DefinitionManager definitionManager = new DefinitionManager();
-        PlayerManager playerManager = new PlayerManager();
-        FactionManager factionManager = new FactionManager();
-        ChatManager chatManager = new ChatManager();
-        private GridManager gridManager;
-        CombatManager combatManager = new CombatManager();
+        private PlayerManager playerManager = new PlayerManager();
+        private FactionManager factionManager = new FactionManager();
+        private ChatManager chatManager = new ChatManager();
+        private GridManager gridManager = new GridManager();
+        private CombatManager combatManager = new CombatManager();
+        private MovementManager movementManager = new MovementManager();
 
         private Dictionary<long, InventoryComponent> RegisteredInventories = new Dictionary<long, InventoryComponent>();
 
-
         public EntityManager()
         {
-             gridManager = new GridManager();
         }
 
         private void OnEntityAdd(IMyEntity e)
@@ -45,14 +44,17 @@ namespace ActivityCollectorPlugin.Managers
 
             SQLQueryData.WriteToDatabase(description);
 
-            if (entity is MyCubeGrid)
+            if (conf.LogGrids)
             {
-                gridManager.AddGrid(entity as MyCubeGrid);
-            }
+                if (entity is MyCubeGrid)
+                {
+                    gridManager.AddGrid(entity as MyCubeGrid);
+                }
 
-            if (!RegisteredInventories.ContainsKey(entity.EntityId))
-            {
-                RegisteredInventories.Add(entity.EntityId, new InventoryComponent(entity));
+                if (conf.LogInventory && !RegisteredInventories.ContainsKey(entity.EntityId))
+                {
+                    RegisteredInventories.Add(entity.EntityId, new InventoryComponent(entity));
+                }
             }
         }
 
@@ -72,16 +74,18 @@ namespace ActivityCollectorPlugin.Managers
             };
 
             SQLQueryData.WriteToDatabase(description);
-
-            if (entity is MyCubeGrid)
+            if (conf.LogGrids)
             {
-                gridManager.RemoveGrid(entity as MyCubeGrid);
-            }
+                if (entity is MyCubeGrid)
+                {
+                    gridManager.RemoveGrid(entity as MyCubeGrid);
+                }
 
-            if (RegisteredInventories.ContainsKey(entity.EntityId))
-            {
-                RegisteredInventories[entity.EntityId].Close();
-                RegisteredInventories.Remove(entity.EntityId);
+                if (conf.LogInventory && RegisteredInventories.ContainsKey(entity.EntityId))
+                {
+                    RegisteredInventories[entity.EntityId].Close();
+                    RegisteredInventories.Remove(entity.EntityId);
+                }
             }
         }
 
@@ -89,6 +93,8 @@ namespace ActivityCollectorPlugin.Managers
         {
             if (!IsInitialized)
             {
+                conf = ActivityCollector.Config.Data;
+
                 HashSet<IMyEntity> entities = new HashSet<IMyEntity>();
                 MyAPIGateway.Entities.GetEntities(entities);
 
@@ -100,15 +106,37 @@ namespace ActivityCollectorPlugin.Managers
                 MyAPIGateway.Entities.OnEntityAdd += OnEntityAdd;
                 MyAPIGateway.Entities.OnEntityRemove += OnEntityRemove;
 
+                if (conf.LogDefinitions)
+                {
+                    MyAPIGateway.Session.OnSessionReady += definitionManager.SessionReady;
+                }
+
+                if (conf.LogMovement)
+                {
+                    MyAPIGateway.Entities.OnEntityAdd += movementManager.AddEntity;
+                    MyAPIGateway.Entities.OnEntityRemove += movementManager.RemoveEntity;
+                }
+
                 IsInitialized = true;
             }
 
+            if (conf.LogPlayers)
+                playerManager.Run();
 
-            definitionManager.Run();
-            playerManager.Run();
-            factionManager.Run();
-            chatManager.Run();
-            combatManager.Run();
+            if (conf.LogFactions)
+                factionManager.Run();
+
+            //if (conf.LogDefinitions)
+            //    definitionManager.Run();
+
+            if (conf.LogChat)
+                chatManager.Run();
+
+            if (conf.LogCombat)
+                combatManager.Run();
+
+            //if (conf.LogMovement)
+            //    movementManager.Run();
         }
     }
 }

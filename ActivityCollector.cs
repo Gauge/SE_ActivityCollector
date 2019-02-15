@@ -1,12 +1,6 @@
 ﻿using ActivityCollectorPlugin.Managers;
 using NLog;
-using System;
-using System.Collections.Generic;
-using System.Data.SqlClient;
 using System.IO;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using Torch;
 using Torch.API;
 using Torch.API.Plugins;
@@ -31,6 +25,7 @@ namespace ActivityCollectorPlugin
 
             _torchServer = (TorchServer)Torch;
             _currentServerState = _torchServer.State;
+
             manager = new EntityManager();
 
             string configPath = Path.Combine(StoragePath, "ActivityCollector.cfg");
@@ -41,14 +36,17 @@ namespace ActivityCollectorPlugin
                 Config.Data.DB_Connection_String = Settings.Default_DB_Connection_String;
                 Config.Data.ProductionInventoryInterval = 500;
                 Config.Data.GeneralInventoryInterval = 5;
+                Config.Data.EntityMovementInterval = 30;
                 Config.Data.DebugMode = false;
                 Config.Data.LogChat = true;
                 Config.Data.LogDefinitions = true;
-                Config.Data.LogEntities = true;
+                //Config.Data.LogEntities = true;
                 Config.Data.LogFactions = true;
                 Config.Data.LogGrids = true;
                 Config.Data.LogInventory = true;
                 Config.Data.LogPlayers = true;
+                Config.Data.LogMovement = true;
+                Config.Data.LogCombat = true;
                 Config.Save();
             }
             else

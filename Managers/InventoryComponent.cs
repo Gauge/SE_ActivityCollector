@@ -63,6 +63,7 @@ namespace ActivityCollectorPlugin.Managers
                         description.Add(EntityId, BlockId, item.ItemId, InvType.Input, InvAction.Current, item.Amount, item.Content.TypeId.ToString(), item.Content.SubtypeId.ToString());
                     }
                 }
+
                 SQLQueryData.WriteToDatabase(description);
             }
         }
@@ -100,11 +101,6 @@ namespace ActivityCollectorPlugin.Managers
             IEnumerable<MyPhysicalInventoryItem> added = currentOutput.Except(LastOutput);
             IEnumerable<MyPhysicalInventoryItem> removed = LastOutput.Except(currentOutput);
 
-            if (added.Count() > 1 || removed.Count() > 1)
-            {
-                ActivityCollector.Log.Error("More than one component being added or removed!!");
-            }
-
             if (removed.Count() == 1 && added.Count() == 1)
             {
                 MyPhysicalInventoryItem old = removed.First();
@@ -121,13 +117,19 @@ namespace ActivityCollectorPlugin.Managers
                     UpdateAmounts(InvType.Output, InvAction.Add, cur);
                 }
             }
-            else if (removed.Count() == 1)
+            else if (removed.Count() >= 1)
             {
-                UpdateAmounts(InvType.Output, InvAction.Remove, removed.First());
+                foreach (MyPhysicalInventoryItem item in removed)
+                {
+                    UpdateAmounts(InvType.Output, InvAction.Remove, item);
+                }
             }
-            else if (added.Count() == 1)
+            else if (added.Count() >= 1)
             {
-                UpdateAmounts(InvType.Output, InvAction.Add, added.First());
+                foreach (MyPhysicalInventoryItem item in added)
+                {
+                    UpdateAmounts(InvType.Output, InvAction.Add, item);
+                }
             }
 
             Increment();

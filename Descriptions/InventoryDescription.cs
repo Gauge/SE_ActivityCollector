@@ -8,22 +8,21 @@ namespace ActivityCollectorPlugin.Descriptions
 
     public class InventoryDescription : SQLQueryData
     {
-
-        //public long BlockId { get; set; }
-        //public bool IsItemAdded { get; set; }
-        //public DateTime Timestamp { get; set; }
-
         private StringBuilder query = new StringBuilder();
+        private bool hasData = false;
 
         public InventoryDescription()
         {
-            query.Append($@"INSERT INTO [entity_inventories] ([entity_id], [block_id], [item_id], [type], [action], [amount], [type_id], [subtype_id], [timestamp])
-            VALUES");
+            query.Append($@"INSERT INTO [entities_inventory] ([entity_id], [block_id], [item_id], [type], [action], [amount], [type_id], [subtype_id], [timestamp])
+            VALUES ");
         }
 
         public override string GetQuery()
         {
-            return query.ToString().TrimEnd(',');
+            if (hasData)
+                return query.ToString().TrimEnd(',') + ";";
+
+            return string.Empty;
         }
 
         public void Clear()
@@ -34,8 +33,8 @@ namespace ActivityCollectorPlugin.Descriptions
 
         public void Add(long EntityId, long? BlockId, uint ItemId, InvType type, InvAction action, MyFixedPoint Amount, string TypeId, string SubtypeId)
         {
-            query.Append($@"
-('{EntityId}', '{((BlockId.HasValue) ? BlockId.Value.ToString() : "NULL")}', {ItemId}, '{type.ToString()}', '{action.ToString()}', {Amount}, '{TypeId}', '{SubtypeId}', '{Tools.DateTimeFormated}'),");
+            hasData = true;
+            query.Append($@"('{EntityId}', '{((BlockId.HasValue) ? BlockId.Value.ToString() : "NULL")}', {ItemId}, '{type.ToString()}', '{action.ToString()}', {Amount}, '{TypeId}', '{SubtypeId}', '{Tools.DateTimeFormated}'),");
         }
 
     }

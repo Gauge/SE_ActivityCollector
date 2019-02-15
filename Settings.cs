@@ -11,13 +11,16 @@ namespace ActivityCollectorPlugin
 
         public int ProductionInventoryInterval { get; set; }
         public int GeneralInventoryInterval { get; set; }
+        public int EntityMovementInterval { get; set; }
 
         public bool LogDefinitions { get; set; }
         public bool LogPlayers { get; set; }
         public bool LogFactions { get; set; }
         public bool LogChat { get; set; }
-        public bool LogEntities { get; set; }
+        //public bool LogEntities { get; set; }
         public bool LogGrids { get; set; }
         public bool LogInventory { get; set; }
+        public bool LogMovement { get; set; }
+        public bool LogCombat { get; set; }
     }
 }
